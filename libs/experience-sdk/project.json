@@ -1,0 +1,53 @@
+{
+  "name": "experience-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/experience-sdk/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/experience-sdk/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}", "{options.outputPath}/src"],
+      "options": {
+        "outputPath": "dist/libs/experience-sdk",
+        "tsConfig": "libs/experience-sdk/tsconfig.lib.json",
+        "project": "libs/experience-sdk/package.json",
+        "main": "libs/experience-sdk/src/index.ts",
+        "rollupConfig": "libs/experience-sdk/rollup.config.cjs",
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "updateBuildableProjectDepsInPackageJson": true,
+        "assets": [
+          {
+            "glob": "libs/experience-sdk/README.md",
+            "input": ".",
+            "output": "."
+          }
+        ],
+        "format": ["cjs", "esm"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/experience-sdk/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional",
+        "skipRootChangelog": true,
+        "skipProjectChangelog": true
+      }
+    }
+  },
+  "tags": []
+}

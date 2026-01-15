@@ -1,0 +1,3 @@
+node_modules
+libs/react-sdk/src/__generated__/
+libs/passport-tiktok/

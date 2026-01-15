@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* You can add global styles to this file, and also import other style files */
+
+@layer components {
+
+  body {
+    @apply h-[100svh] w-screen flex items-center justify-center bg-colorBrand text-colorPrimary font-ObjektivMk1Thin
+  }
+
+  .page {
+    @apply flex flex-col md:h-fit md:w-fit
+  }
+
+  .terms__content strong {
+    @apply font-ObjektivMk1XBold
+  }
+  .terms__content_ol {
+    @apply list-none;
+    counter-reset: item;
+  }
+  .terms__content_ol > li {
+    @apply table my-2;
+    counter-increment: item;
+  }
+  .terms__content_ol > li::before {
+    @apply table-cell pr-2 font-ObjektivMk1Medium;
+    content: counters(item, ".") ". ";
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-colorSecondary rounded-lg
+}

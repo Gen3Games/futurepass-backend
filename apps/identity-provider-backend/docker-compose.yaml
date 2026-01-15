@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - '6379:6379'
+
+  localstack-main:
+    container_name: identity-provider-backend-localstack
+    image: localstack/localstack
+    environment:
+      - DYNAMODB_SHARE_DB=1
+      - MAIN_CONTAINER_NAME=identity-provider-backend-localstack
+      - PERSISTENCE=1
+      # - REQUIRE_PRO=1
+    ports:
+      - 127.0.0.1:4566:4566 # LocalStack Gateway
+      - 127.0.0.1:4510-4559:4510-4559 # external services port range
+      - 127.0.0.1:53:53 # DNS config (only required for Pro)
+      - 127.0.0.1:53:53/udp # DNS config (only required for Pro)
+      - 127.0.0.1:443:443 # LocalStack HTTPS Gateway (only required for Pro)
+    volumes:
+      - ./.localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    depends_on:
+      - localstack-main
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack-main:4566
+    ports:
+      - 127.0.0.1:8002:8001
+
+  terraform-local:
+    image: hashicorp/terraform:1.4.2
+    command: -c "terraform init -lock=false && terraform apply -auto-approve -lock=false"
+    entrypoint: sh
+    depends_on:
+      - localstack-main
+    volumes:
+      - './terraform:/terraform'
+    working_dir: /terraform/environments/local
+
+  # To be uncommented after PFS-337 the issues have been fixed (https://futureverse.atlassian.net/jira/software/c/projects/PFS/boards/130?selectedIssue=PFS-337)
+  # identity-provider:
+  #   image: node:18.19.1
+  #   container_name: identity-provider
+  #   working_dir: /app
+  #   volumes:
+  #     - ${CURRENT_PATH}/dist/apps/identity-provider-backend:/app/identity-provider-backend # mount the backend
+  #     - ${CURRENT_PATH}/dist/apps/identity-provider-frontend:/app/identity-provider-frontend # mount the frontend
+  #     - ${CURRENT_PATH}/node_modules:/app/node_modules # mount node_modules
+  #   ports:
+  #     - '4200:4200'
+  #   env_file:
+  #     - ${CURRENT_PATH}/apps/identity-provider-backend/.env
+  #   environment:
+  #     - NODE_ENV=development
+  #     - REDIS_URL=redis:6379 # this overrides the REDIS_URL setting in .env
+  #   command: npx nodemon identity-provider-backend/main.js
+  #   depends_on:
+  #     - redis

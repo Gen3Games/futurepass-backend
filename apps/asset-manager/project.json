@@ -1,0 +1,62 @@
+{
+  "name": "asset-manager",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/asset-manager/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/asset-manager",
+        "main": "apps/asset-manager/src/main.ts",
+        "tsConfig": "apps/asset-manager/tsconfig.app.json",
+        "assets": ["apps/asset-manager/src/assets"],
+        "generatePackageJson": true
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "generatePackageJson": true,
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "asset-manager:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "asset-manager:build:development"
+        },
+        "production": {
+          "buildTarget": "asset-manager:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/asset-manager/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/asset-manager/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

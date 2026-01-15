@@ -1,0 +1,34 @@
+{
+  "name": "oidc-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/oidc-client/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/oidc-client",
+        "main": "libs/oidc-client/src/index.ts",
+        "tsConfig": "libs/oidc-client/tsconfig.lib.json",
+        "assets": ["libs/oidc-client/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/oidc-client/**/*.ts"]
+      }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional",
+        "skipRootChangelog": true,
+        "skipProjectChangelog": true
+      }
+    }
+  },
+  "tags": []
+}

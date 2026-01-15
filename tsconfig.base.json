@@ -1,0 +1,43 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strictBindCallApply": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "paths": {
+      "@futureverse/common": ["libs/common/src/index.ts"],
+      "@futureverse/component-library": ["libs/component-library/src/index.ts"],
+      "@futureverse/experience-sdk": ["libs/experience-sdk/src/index.ts"],
+      "@futureverse/experience-sdk/wagmi": [
+        "libs/experience-sdk/src/wagmi/index.ts"
+      ],
+      "@futureverse/experience-sdk/web3-react": [
+        "libs/experience-sdk/src/web3-react/index.ts"
+      ],
+      "@futureverse/identity-contract-bindings": [
+        "libs/identity-contract-bindings/src/index.ts"
+      ],
+      "@futureverse/oidc-client": ["libs/oidc-client/src/index.ts"],
+      "@futureverse/react-sdk": ["libs/react-sdk/src/index.ts"],
+      "@futureverse/rpc-kit": ["libs/rpc-kit/src/index.ts"],
+      "@futureverse/stateboss": ["libs/stateboss/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

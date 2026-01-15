@@ -1,0 +1,42 @@
+{
+  "name": "rpc-kit",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/rpc-kit/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/rpc-kit",
+        "main": "libs/rpc-kit/src/index.ts",
+        "tsConfig": "libs/rpc-kit/tsconfig.lib.json",
+        "assets": ["libs/rpc-kit/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/rpc-kit/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/rpc-kit/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional",
+        "skipRootChangelog": true,
+        "skipProjectChangelog": true
+      }
+    }
+  },
+  "tags": []
+}

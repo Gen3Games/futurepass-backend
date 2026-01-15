@@ -1,0 +1,15 @@
+{
+  "name": "BarcaPass",
+  "logoPath": "images/logo.png",
+  "faviconPath": "images/favicon.png",
+  "translations": [
+    {
+      "locale": "en",
+      "localePath": "i18n/translation-tenant-en.json"
+    },
+    {
+      "locale": "jp",
+      "localePath": "i18n/translation-tenant-jp.json"
+    }
+  ]
+}

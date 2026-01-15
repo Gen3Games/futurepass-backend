@@ -1,0 +1,7 @@
+{
+  "custodial-signer": {
+    "custodial-signer__buttons_cancel-button": "Cancel",
+    "custodial-signer__buttons_confirm-button": "Confirm",
+    "custodial-signer__content_message_title": "Message:"
+  }
+}

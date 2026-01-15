@@ -1,0 +1,31 @@
+name: Publish libraries
+on:
+  workflow_dispatch:
+    inputs:
+      library_name:
+        description: "Library name"
+        required: true
+        type: choice
+        options:
+          - react-sdk
+          - experience-sdk
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+
+jobs:
+  release_library:
+    uses: ./.github/workflows/semantic-release.yaml
+    permissions:
+      id-token: write
+      contents: write
+      actions: read
+    with:
+      library_name: ${{ inputs.library_name }}
+    secrets: inherit

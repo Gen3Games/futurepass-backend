@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+sh .husky/check-branch-name.sh
+pnpm exec lint-staged

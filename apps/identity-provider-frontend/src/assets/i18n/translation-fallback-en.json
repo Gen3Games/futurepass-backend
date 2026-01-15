@@ -1,0 +1,136 @@
+{
+  "index": {
+    "index__logout_link": "Logout"
+  },
+  "error": {
+    "error__message": "Dropped pass",
+    "error__code": "Error Code: {{errorCode}}"
+  },
+  "metamask-prompt": {
+    "metamask-prompt__header_message": "Unsupported Browser",
+    "metamask-prompt__content_message-1": "{{tenantName}} is not optimised for the for this browser.",
+    "metamask-prompt__content_message-2": "Use the Google Chrome browser on desktop.",
+    "metamask-prompt__content_back-button": "Go Back"
+  },
+  "brave-prompt": {
+    "brave-prompt__header_message": "{{tenantName}} Early Access Phase",
+    "brave-prompt__content_message-1": "You are about to create Your FuturePass",
+    "brave-prompt__content_message-2": "{{tenantName}} is optimised for Google Chrome during the early access phase. If not in Google Chrome browser we recommend changing browsers for the best experience.",
+    "brave-prompt__content_continue-button": "I Am Using Google Chrome"
+  },
+  "metamask-install-prompt": {
+    "metamask-install-prompt__header": "{{wallet}} not installed.",
+    "metamask-install-prompt__content": "You need to install {{wallet}} to continue. Please install {{wallet}} then refresh the page.",
+    "metamask-install-prompt__content_back-button": "Go back",
+    "metamask-install-prompt__content_install-button": "Install {{wallet}}"
+  },
+  "futurepass-info": {
+    "futurepass-info__header": "What is a {{tenantName}}??",
+    "futurepass-info__content_message-1": "The {{tenantName}} is your pass to journey through the Open Metaverse.",
+    "futurepass-info__content_message-2": "It connects you to any experience or application, and is unique to you. It protects all aspects of your identity and data, it stores your assets, manages permissions, helps you build status and safeguards your funds as you explore the Open Metaverse. This is the beginning of your journey, simpler and safer than ever before.",
+    "futurepass-info__content_message-3": "For more information, ",
+    "futurepass-info__content_message-3-link": "visit website.",
+    "futurepass-info__content_close-button": "Close"
+  },
+  "custom-network-warning": {
+    "custom-network-warning__header": "Does your wallet support custom networks?",
+    "custom-network-warning__content": "Your {{tenantName}} connects to The Root Network and Ethereum. Please ensure you are using a wallet that supports custom networks.",
+    "custom-network-warning__content_back-button": "Go Back",
+    "custom-network-warning__content_support-button": "My Wallet Supports Custom Networks"
+  },
+  "login-error": {
+    "login-error__header_message": "We ran into a problem",
+    "login-error__content_message": "There was a problem logging into your Futureverse account. Please try again or go back.",
+    "login-error__content_back-button": "Go Back",
+    "login-error__content_try-again-button": "Try Again"
+  },
+  "xaman-qr-code": {
+    "xaman-qr-code__heading": "Continue with Xaman",
+    "xaman-qr-code__show-qr_message": "Please scan the QR code in your wallet",
+    "xaman-qr-code__hide-qr_message-1": "Xaman wallet connected successfully!",
+    "xaman-qr-code__hide-qr_message-2": "Please authorize FuturePass in your mobile wallet.",
+    "xaman-qr-code__hide-qr_message-3": "Didn&apos;t receive a signature request in wallet?",
+    "xaman-qr-code__hide-qr_show-qr-button": "Scan QR code instead"
+  },
+  "login-custodial": {
+    "login-custodial__header_message": "Begin your journey.",
+    "login-custodial__content_google-button": "Google",
+    "login-custodial__content_facebook-button": "Facebook",
+    "login-custodial__content_twitter-button": "X",
+    "login-custodial__content_tiktok-button": "TikTok",
+    "login-custodial__content_apple-button": "Apple",
+    "login-custodial__content_email-button": "Continue with Email",
+    "login-custodial__content_alternatively": "Alternatively",
+    "login-custodial__content_switch-mode-button": {
+      "custodial": "Connect Email or Socials",
+      "non-custodial": "Connect Web3 wallet"
+    }
+  },
+  "login-non-custodial": {
+    "login-non-custodial__header_message": "Begin your journey.",
+    "login-non-custodial__content_metamask-button": "MetaMask",
+    "login-non-custodial__content_walletconnect-button": "WalletConnect",
+    "login-non-custodial__content_xaman-button": "Xaman",
+    "login-non-custodial__content_coinbase-button": "Coinbase Wallet",
+    "login-non-custodial__content_alternatively": "Alternatively",
+    "login-non-custodial__content_installed": "Installed",
+    "login-non-custodial__content_switch-mode-button": {
+      "custodial": "Connect Email or Socials",
+      "non-custodial": "Connect Web3 wallet"
+    }
+  },
+  "sms-otp-page": {
+    "sms-opt-page__header_verification-required": "SMS verification required",
+    "sms-otp-page__header_message": "We require an extra verification step when an empty web3 address is used to create a {{tenantName}}",
+    "sms-otp-page__input_phone": "Phone number",
+    "sms-otp-page__resend-time": "Resend code in {{formattedTimeUntilNextSendSmsOtpRetry}}",
+    "sms-otp-page__buttons_back-button": "Back",
+    "sms-otp-page__buttons_next-button": "Next",
+    "sms-otp-page__input_dropdown-label": "Area",
+    "sms-otp-page__input_phone-number-placeholder": "Phone number",
+    "sms-otp-page__errors": {
+      "generic": "Something went wrong, please try again.",
+      "invalidPhoneNumber": "Invalid phone number, please use the +112345678 format.",
+      "maxAttemptsReached": "Verification attempts maximum exceeded, please wait 10 minutes before trying again.",
+      "wrongCodeLength": "Please enter 6-digit code.",
+      "incorrectCode": "Incorrect code entered, please try again."
+    }
+  },
+  "verify-otp": {
+    "verify-otp__header_message": {
+      "sms": "SMS verification required",
+      "email": "Verify your email"
+    },
+    "verify-otp__instruction": "Enter the 6 digit code sent to {{connectInfo}}",
+    "verify-otp__resend_message": "Did not receive a code ?",
+    "verify-otp__resend_message-email": " Please check junk email",
+    "verify-otp__resend_resend-button": {
+      "resendIn": "Resend code in {{formattedTimeUntilNextRetry}}",
+      "resend": "Resend"
+    },
+    "verify-otp__back-button-container_back-button": "Back"
+  },
+  "email": {
+    "email__header_text": "Continue with email",
+    "email__header_input": "Enter your email address",
+    "email__button-container": {
+      "back": "Back",
+      "continue": "Continue"
+    },
+    "email__errors": {
+      "generic": "Something went wrong, please try again.",
+      "invalidEmail": "Invalid email address.",
+      "resendTimeout": "Please wait {{formattedTimeUntilNextSendEmailOtpRetry}} before requesting again.",
+      "codeIncorrect": "Incorrect code entered. Please wait {{formattedTimeUntilNextVerifyEmailOtpRetry}} before entering again.",
+      "codeNoLongerValid": "Code is no longer valid, please request a new one.",
+      "revalidateTimeout": "Please wait {{formattedTimeUntilNextSendEmailOtpRetry}} before entering code again."
+    }
+  },
+  "progress-indicator": {
+    "progress-indicator__title": "Continue with {{targetSSO}}",
+    "progress-indicator__text": "Sign into your account in the pop-up"
+  },
+  "unsupported-browser": {
+    "unsupported-browser.unsupported-browser__text": "Unsupported browser. Please use Chrome, Brave, Or Firefox"
+  }
+}

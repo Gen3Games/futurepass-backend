@@ -1,0 +1,82 @@
+{
+  "name": "identity-provider-backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/identity-provider-backend/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/identity-provider-backend",
+        "main": "apps/identity-provider-backend/src/main.ts",
+        "tsConfig": "apps/identity-provider-backend/tsconfig.app.json",
+        "assets": ["apps/identity-provider-backend/src/assets"],
+        "generatePackageJson": false
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "generatePackageJson": true,
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-backend/src/environments/environment.ts",
+              "with": "apps/identity-provider-backend/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "identity-provider-backend:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "identity-provider-backend:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/identity-provider-backend/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/identity-provider-backend/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "dependsOn": ["build"],
+      "options": {
+        "engine": "docker",
+        "platforms": ["linux/x86_64"],
+        "metadata": {
+          "images": ["futureverse-oidc"],
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=sha,prefix=sha-"
+          ]
+        }
+      }
+    }
+  },
+  "tags": []
+}

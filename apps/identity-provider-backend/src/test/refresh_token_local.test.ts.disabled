@@ -1,0 +1,270 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument -- unit test */
+/* eslint-disable @typescript-eslint/restrict-template-expressions -- unit test */
+/* eslint-disable @typescript-eslint/no-unsafe-return -- unit test */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access -- unit test */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- unit test */
+/* eslint-disable @typescript-eslint/no-unsafe-call -- unit test */
+
+/**
+ *
+ * To test refresh token requires login with an existing user first which the process cannot be automated on local.
+ * This can be enabled once we have refresh token deployed to staging env
+ *
+ */
+
+import * as t from 'io-ts'
+import jwt from 'jsonwebtoken'
+import * as CO from '../common'
+
+// required fields
+const authBaseUrl = 'http://localhost:4200/auth'
+const tokenBaseUrl = 'http://localhost:4200/token'
+
+const responseType = 'code'
+const scope_offline_access = 'openid offline_access'
+const state = '4ef3e70a851d410894aebbba8bc1de79'
+
+const code_verifier =
+  '9c39fda027aa436c8d2f30eaabd7c60ae3910ea0c8064724a1fed26c16741c6a3cc37e1bd7fc4488b428befe56f21bb3'
+const code_challenge = 'QcniPyuaj9wr2NezUaeryzQuA9QgXjmy1-r1xfLhaG0'
+const code_challenge_method = 'S256'
+
+// optional fields
+const nonce = '86Etej8ERjVIpq7Ov'
+const response_mode = 'query'
+const prompt = 'login'
+
+const eoa = '0xA5A5A6e97528a6BA1EE04f27582d37E9b612f6C3'
+const login_hint = `eoa:nonce=MFAFbnZ8r3BXUu1UJ&address=0xA5A5A6e97528a6BA1EE04f27582d37E9b612f6C3&issuedAt=2023-11-30T23%3A02%3A52.792Z&domain=localhost%3A4204&signature=0xbe0bc9c7d659d20ffc5cd701033c39c44ac796ed06c6b0572ecc293f8ba2952f76a9222b711bc369537e0d3ff0147c91b9b970f9fd6d7eb269cdcf8a766e56d61b`
+describe('Authorization Endpoint Tests', () => {
+  it('should obtain refresh tokens with valid authorization code', async () => {
+    const clientId = 'dashboard'
+    const redirectUri = 'http://localhost:4204/login'
+
+    const result = await loginToIdentityProviderBackend2(
+      clientId,
+      redirectUri,
+      true,
+      scope_offline_access
+    )
+
+    expect(result).not.toBeNull()
+    expect(result?.serverReturnedCode).not.toBeNull()
+
+    const authorizationCode = result?.serverReturnedCode
+
+    if (authorizationCode) {
+      // Perform the operation
+      const tokens = await obtainTokens(
+        authorizationCode,
+        clientId,
+        redirectUri
+      )
+
+      console.log(tokens)
+      // Assert that all tokens are present in the response
+      expect(tokens).toHaveProperty('id_token')
+      expect(tokens).toHaveProperty('access_token')
+      expect(tokens).toHaveProperty('refresh_token')
+
+      const idTokenPayload = CO.hush(
+        JWTCodec.decode(jwt.decode(tokens.id_token))
+      )
+
+      expect(idTokenPayload).not.toBeNull()
+
+      if (idTokenPayload) {
+        expect(idTokenPayload.eoa).toBe(eoa)
+        expect(idTokenPayload).toHaveProperty('nonce')
+        expect(idTokenPayload.nonce).toBe(nonce)
+      }
+
+      const refreshedTokens = await obtainRefreshTokens(
+        tokens.refresh_token,
+        clientId
+      )
+      console.log(refreshedTokens)
+      // Assert that all tokens are present in the response
+      expect(refreshedTokens).toHaveProperty('id_token')
+      expect(refreshedTokens).toHaveProperty('access_token')
+      expect(refreshedTokens).toHaveProperty('refresh_token')
+
+      expect(refreshedTokens.id_token).not.toEqual(tokens.id_token)
+      expect(refreshedTokens.access_token).not.toEqual(tokens.access_token)
+      expect(refreshedTokens.refresh_token).not.toEqual(tokens.refresh_token)
+
+      const refreshedIdTokenPayload = CO.hush(
+        JWTCodec.decode(jwt.decode(refreshedTokens.id_token))
+      )
+
+      expect(refreshedIdTokenPayload).not.toBeNull()
+
+      if (refreshedIdTokenPayload) {
+        expect(refreshedIdTokenPayload.eoa).toBe(eoa)
+        expect(refreshedIdTokenPayload).toHaveProperty('nonce')
+        expect(refreshedIdTokenPayload.nonce).toBe(nonce)
+      }
+    }
+  }, 50000)
+})
+
+const loginToIdentityProviderBackend2 = async (
+  clientId: string,
+  redirectUri: string,
+  isPKCE: boolean,
+  scope: string
+) => {
+  const usePKCE = isPKCE
+    ? `&code_challenge=${code_challenge}&code_challenge_method=${code_challenge_method}`
+    : ''
+
+  const response = await fetch(
+    `${authBaseUrl}?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&response_type=${responseType}&scope=${encodeURIComponent(
+      scope
+    )}&nonce=${nonce}&state=${state}&response_mode=${response_mode}&prompt=${prompt}&login_hint=${encodeURIComponent(
+      login_hint
+    )}${usePKCE}`,
+    {
+      redirect: 'manual', // prevent auto redirection to capture the response
+    }
+  )
+
+  let cookieHeader = ''
+  let setCookieHeader = response.headers.get('set-cookie')
+  if (setCookieHeader) {
+    cookieHeader = setCookieHeader
+      .split(',')
+      .map((cookie) => cookie.split(';')[0])
+      .join('; ')
+  }
+
+  const loginLocation = response.headers.get('location')
+  // console.log('loginLocation: ', loginLocation)
+
+  if (loginLocation) {
+    const loginRedirectResponse = await fetch(
+      `http://localhost:4200${loginLocation}`,
+      {
+        method: 'GET',
+        headers: {
+          Cookie: cookieHeader,
+        },
+        redirect: 'manual',
+      }
+    )
+
+    cookieHeader = ''
+    setCookieHeader = response.headers.get('set-cookie')
+    if (setCookieHeader) {
+      cookieHeader = setCookieHeader
+        .split(',')
+        .map((cookie) => cookie.split(';')[0])
+        .join('; ')
+    }
+
+    const authLocation = loginRedirectResponse.headers.get('location')
+    // console.log('authLocation:', authLocation)
+
+    if (authLocation) {
+      const authRedirectResponse = await fetch(authLocation, {
+        method: 'GET',
+        headers: {
+          Cookie: cookieHeader,
+        },
+        redirect: 'manual',
+      })
+
+      const clientLoginLocation = authRedirectResponse.headers.get('location')
+      // console.log('clientLoginLocation: ', clientLoginLocation)
+
+      if (clientLoginLocation) {
+        const redirectUrl = new URL(clientLoginLocation)
+
+        const serverReturnedCode = redirectUrl.searchParams.get('code')
+        const serverReturnedState = redirectUrl.searchParams.get('state')
+
+        return { serverReturnedCode, serverReturnedState }
+      }
+    }
+  }
+
+  return null
+}
+
+const obtainTokens = async (
+  authorizationCode: string,
+  clientId: string,
+  redirectUri: string
+) => {
+  const params = {
+    grant_type: 'authorization_code',
+    code: authorizationCode,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    code_verifier,
+  }
+
+  const response = await fetch(tokenBaseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams(params),
+  })
+
+  if (!response.ok) {
+    // Throw an error if the response from the token endpoint is not successful
+    const errorDetail = await response.json()
+    throw new Error(`Token endpoint error: ${errorDetail.error}`)
+  }
+
+  return await response.json()
+}
+
+const obtainRefreshTokens = async (refreshToken: string, clientId: string) => {
+  const params = {
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_id: clientId,
+  }
+
+  const response = await fetch(tokenBaseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams(params),
+  })
+
+  if (!response.ok) {
+    // Throw an error if the response from the token endpoint is not successful
+    const errorDetail = await response.json()
+    throw new Error(`Token endpoint error: ${errorDetail.error}`)
+  }
+
+  return await response.json()
+}
+
+const JWTCodec = t.type({
+  sub: t.string,
+  eoa: t.string,
+  custodian: t.literal('self'), // use t.literal when the value is a constant
+  chainId: t.number,
+  auth_time: t.number,
+  nonce: t.string,
+  at_hash: t.string,
+  aud: t.string,
+  exp: t.number,
+  iat: t.number,
+  iss: t.string,
+})
+export {}
+
+/* eslint-enable @typescript-eslint/no-unsafe-argument -- unit test */
+/* eslint-enable @typescript-eslint/restrict-template-expressions -- unit test */
+/* eslint-enable @typescript-eslint/no-unsafe-return -- unit test */
+/* eslint-enable @typescript-eslint/no-unsafe-member-access -- unit test */
+/* eslint-enable @typescript-eslint/no-unsafe-assignment -- unit test */
+/* eslint-enable @typescript-eslint/no-unsafe-call -- unit test */

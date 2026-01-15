@@ -1,0 +1,177 @@
+{
+  "name": "identity-provider-frontend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/identity-provider-frontend/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "compiler": "babel",
+        "outputPath": "dist/apps/identity-provider-frontend",
+        "index": "apps/identity-provider-frontend/src/index.html",
+        "baseHref": "/",
+        "main": "apps/identity-provider-frontend/src/main.tsx",
+        "polyfills": "apps/identity-provider-frontend/src/polyfills.ts",
+        "tsConfig": "apps/identity-provider-frontend/tsconfig.app.json",
+        "assets": [
+          "apps/identity-provider-frontend/src/assets",
+          {
+            "input": "apps/identity-provider-frontend/public/fonts",
+            "output": "fonts",
+            "glob": "**/*"
+          },
+          {
+            "input": "apps/identity-provider-frontend/public/image",
+            "output": "image",
+            "glob": "**/*"
+          },
+          {
+            "input": "apps/identity-provider-frontend/public/styles",
+            "output": "styles",
+            "glob": "**/*"
+          }
+        ],
+        "styles": [
+          "apps/identity-provider-frontend/src/styles.css"
+        ],
+        "scripts": [],
+        "webpackConfig": "apps/identity-provider-frontend/webpack.config.js",
+        "postcssConfig": "apps/identity-provider-frontend/postcss.config.js"
+      },
+      "configurations": {
+        "development": {
+          "extractLicenses": false,
+          "optimization": false,
+          "sourceMap": true,
+          "vendorChunk": true
+        },
+        "preview": {
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-frontend/src/environments/environment.ts",
+              "with": "apps/identity-provider-frontend/src/environments/environment.preview.ts"
+            }
+          ],
+          "optimization": true,
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        },
+        "neptune": {
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-frontend/src/environments/environment.ts",
+              "with": "apps/identity-provider-frontend/src/environments/environment.neptune.ts"
+            }
+          ],
+          "optimization": true,
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        },
+        "staging": {
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-frontend/src/environments/environment.ts",
+              "with": "apps/identity-provider-frontend/src/environments/environment.staging.ts"
+            }
+          ],
+          "optimization": true,
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        },
+        "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-frontend/src/environments/environment.ts",
+              "with": "apps/identity-provider-frontend/src/environments/environment.prod.ts"
+            }
+          ],
+          "optimization": true,
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        },
+        "audit": {
+          "fileReplacements": [
+            {
+              "replace": "apps/identity-provider-frontend/src/environments/environment.ts",
+              "with": "apps/identity-provider-frontend/src/environments/environment.audit.ts"
+            }
+          ],
+          "optimization": true,
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
+          "vendorChunk": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/webpack:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "identity-provider-frontend:build",
+        "hmr": true,
+        "port": 4207,
+        "host": "localhost"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "identity-provider-frontend:build:development"
+        },
+        "preview": {
+          "buildTarget": "identity-provider-frontend:build:preview"
+        },
+        "neptune": {
+          "buildTarget": "identity-provider-frontend:build:neptune"
+        },
+        "staging": {
+          "buildTarget": "identity-provider-frontend:build:staging"
+        },
+        "production": {
+          "buildTarget": "identity-provider-frontend:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/identity-provider-frontend/**/*.{ts,tsx,js,jsx}"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/identity-provider-frontend/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "identity-provider-frontend:build"
+      }
+    }
+  },
+  "tags": []
+}

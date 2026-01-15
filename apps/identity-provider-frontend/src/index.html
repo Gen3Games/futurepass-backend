@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>FuturePass</title>
+    <base href="/" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <div style="display: none">
+      <!-- css files -->
+      <% if (typeof cssFiles !== 'undefined' && cssFiles != null) { %> <%
+      cssFiles.forEach(url => { %>
+      <link rel="stylesheet" href="<%= url %>" />
+      <% }) %> <% } %>
+    </div>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="tenant-config" style="display: none">
+      <% if (typeof tenantConfig !== 'undefined' && tenantConfig != null) { %>
+      <%- tenantConfig %> <% } %>
+    </div>
+  </body>
+</html>

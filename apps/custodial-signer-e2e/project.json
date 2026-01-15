@@ -1,0 +1,29 @@
+{
+  "name": "custodial-signer-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/custodial-signer-e2e/src",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/custodial-signer-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "custodial-signer:serve"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "custodial-signer:serve:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/custodial-signer-e2e/**/*.{js,ts}"]
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": ["custodial-signer"]
+}

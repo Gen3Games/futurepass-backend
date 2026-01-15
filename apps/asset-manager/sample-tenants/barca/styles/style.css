@@ -1,0 +1,59 @@
+/* ---------------------------------------------------------- */
+/* set background image */
+
+body {
+  background-image: url('../images/bg.png') !important;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ---------------------------------------------------------- */
+
+/* ---------------------------------------------------------- */
+/* set box background */
+
+.page {
+  backdrop-filter: blur(20px);
+}
+
+/* ---------------------------------------------------------- */
+
+.tenant-logo__image {
+  width: 30px;
+}
+
+/* ---------------------------------------------------------- */
+/* set custom font  */
+
+@font-face {
+  font-family: 'customTenantFont';
+  src: url('../fonts/Bebas-Regular.ttf');
+}
+
+h1 {
+  font-family: customTenantFont !important;
+}
+button {
+  font-family: customTenantFont !important;
+}
+
+/* ---------------------------------------------------------- */
+
+/* ---------------------------------------------------------- */
+/* signer popup customization  */
+
+.signer-tenant-logo__image {
+  width: 80px;
+}
+
+.custodial-signer__content_message-1 {
+  color: white;
+  font-size: medium;
+}
+
+.custodial-signer__content_message-2 {
+  font-size: small;
+}
+
+/* ---------------------------------------------------------- */

@@ -1,0 +1,175 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["./tsconfig.base.json"],
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "ignorePatterns": ["**/*"],
+  "plugins": ["@nx", "@typescript-eslint", "react-extra", "@tanstack/query"],
+  "rules": {
+    "react-hooks/rules-of-hooks": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "prettier/prettier": "off", // Prettier takes care of this
+    "no-console": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "warn",
+    "@typescript-eslint/restrict-template-expressions": "warn",
+    "@typescript-eslint/restrict-plus-operands": "warn",
+    "no-shadow": "off", // @typescript-eslint/no-shadow takes care of that
+    "@typescript-eslint/no-shadow": "warn",
+    "no-unused-vars": "off", // TS takes care of that
+    "@typescript-eslint/consistent-type-assertions": [
+      "warn",
+      {
+        "assertionStyle": "never"
+      }
+    ],
+    "import/order": [
+      "warn",
+      {
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+          "object",
+          "type"
+        ],
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        }
+      }
+    ],
+    "import/first": "warn",
+    "import/no-duplicates": "warn",
+    "import/newline-after-import": "warn",
+    "import/no-named-as-default-member": "warn",
+    "import/no-unresolved": "off", // TS takes care of this
+    "object-shorthand": "warn",
+    "@typescript-eslint/no-unnecessary-type-arguments": "off", // Keep for readability if the developer wants to use it
+    "@typescript-eslint/consistent-type-definitions": "off", // interface and type are not always interchangeable, let the dev choose
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "@nx/enforce-module-boundaries": [
+      "warn",
+      {
+        "enforceBuildableLibDependency": true,
+        "allow": [],
+        "depConstraints": [
+          {
+            "sourceTag": "*",
+            "onlyDependOnLibsWithTags": ["*"]
+          }
+        ]
+      }
+    ],
+    "eslint-comments/no-use": [
+      "warn",
+      {
+        "allow": ["eslint-disable-next-line", "eslint-disable", "eslint-enable"]
+      }
+    ],
+    "eslint-comments/require-description": "warn",
+    "react/prop-types": "off", // We use TS instead of propTypes
+    "react/react-in-jsx-scope": "off", // Next automatically imports React to every file
+
+    // THESE RULE OVERRIDES MUST BE REMOVED AFTER THE ERRORS ARE RESOLVED
+    // They're only here to change them from error to warn so we can progressively clean the codebase
+    "@typescript-eslint/unbound-method": "warn",
+    "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    "@typescript-eslint/no-unnecessary-condition": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-misused-promises": [
+      "warn",
+      {
+        "checksVoidReturn": false
+      }
+    ],
+    "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-floating-promises": "warn",
+    "@typescript-eslint/require-await": "warn",
+    "@typescript-eslint/await-thenable": "warn",
+    "@typescript-eslint/no-unnecessary-type-assertion": "warn"
+    // DO NOT MOVE THE ABOVE RULES OUT OF THIS BLOCK
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "rules": {
+        "@nx/enforce-module-boundaries": [
+          "error",
+          {
+            "enforceBuildableLibDependency": true,
+            "allow": [],
+            "depConstraints": [
+              {
+                "sourceTag": "*",
+                "onlyDependOnLibsWithTags": ["*"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:@nx/typescript"],
+      "parserOptions": {
+        "project": ["tsconfig.base.json"]
+      },
+      "rules": {
+        "@typescript-eslint/restrict-template-expressions": "warn"
+      }
+    },
+    {
+      "files": ["*.js", "*.jsx"],
+      "extends": ["plugin:@nx/javascript"],
+      "rules": {}
+    },
+    {
+      "files": "*.json",
+      "parser": "jsonc-eslint-parser",
+      "rules": {}
+    },
+    {
+      "files": ["*.spec.ts", "*.spec.tsx", "*.spec.js", "*.spec.jsx"],
+      "env": {
+        "jest": true
+      },
+      "rules": {}
+    }
+  ],
+  "extends": [
+    "plugin:@nx/react-typescript",
+    "plugin:@nx/typescript",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:@typescript-eslint/strict",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:prettier/recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript",
+    "plugin:storybook/recommended",
+    "plugin:eslint-comments/recommended",
+    "plugin:@tanstack/eslint-plugin-query/recommended"
+  ]
+}

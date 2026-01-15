@@ -1,0 +1,30 @@
+@font-face {
+  font-family: 'ObjektivMk1Thin';
+  src: local('ObjektivMk1_W_Th'),
+       url('/fonts/ObjektivMk1_W_Th.woff2') format('woff2'),
+       url('/fonts/ObjektivMk1_W_Th.woff') format('woff'),
+       url('/fonts/ObjektivMk1_Th.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'ObjektivMk1Medium';
+  src: local('Objektiv Mk1 W03 Medium'),
+       url('/fonts/Objektiv Mk1 W03 Medium.woff2') format('woff2'),
+       url('/fonts/Objektiv Mk1 W03 Medium.woff') format('woff'),
+       url('/fonts/Objektiv Mk1 W03 Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'ObjektivMk1XBold';
+  src: local('Objektiv Mk1 W03 XBold'),
+       url('/fonts/Objektiv Mk1 W03 XBold.woff2') format('woff2'),
+       url('/fonts/Objektiv Mk1 W03 XBold.woff') format('woff'),
+       url('/fonts/Objektiv Mk1 W03 XBold.ttf') format('truetype');
+}
+
+
+html, body {
+  height: 100%;
+  font-family: 'ObjektivMk1Thin', sans-serif;
+  line-height: 1.6;
+}

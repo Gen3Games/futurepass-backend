@@ -1,0 +1,47 @@
+{
+  "name": "@futureverse/experience-sdk",
+  "version": "0.9.19",
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "module": "./index.js",
+  "exports": {
+    ".": {
+      "import": "./index.e.js",
+      "require": "./index.c.cjs",
+      "types": "./src/index.d.ts"
+    },
+    "./wagmi": {
+      "import": "./wagmi.e.js",
+      "require": "./wagmi.c.cjs",
+      "types": "./wagmi.d.ts"
+    },
+    "./web3-react": {
+      "import": "./web3react.e.js",
+      "require": "./web3react.c.cjs",
+      "types": "./web3react.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./src/index.d.ts"
+      ],
+      "wagmi": [
+        "./src/wagmi/index.d.ts"
+      ],
+      "web3-react": [
+        "./src/web3-react/index.d.ts"
+      ]
+    }
+  },
+  "dependencies": {
+    "@therootnetwork/extrinsic": "^1.0.5",
+    "graphql": "^16.8.1"
+  },
+  "peerDependencies": {
+    "@web3-react/eip1193": "^8.0.27-beta.0",
+    "wagmi": "^0.12.16",
+    "ethers": "5.7.2"
+  }
+}

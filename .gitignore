@@ -48,6 +48,8 @@ Thumbs.db
 .terraform.lock.hcl
 
 .localstack
+apps/identity-provider-backend/.scylla/
+apps/identity-provider-backend/.env.local
 apps/identity-provider-backend/terraform/environments/local/terraform.tfstate
 apps/identity-provider-backend/terraform/environments/local/terraform.tfstate.backup
 

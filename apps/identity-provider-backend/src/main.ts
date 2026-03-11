@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import fs from 'fs'
 import http from 'http'
 import https from 'https'
 import * as path from 'path'
@@ -67,7 +68,28 @@ import {
   SERVICE_NAME,
 } from './utils/constants'
 
-donenvExpand.expand(dotenv.config())
+const envConfigPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(process.cwd(), 'apps/identity-provider-backend/.env'),
+  path.resolve(process.cwd(), 'apps/identity-provider-backend/.env.local'),
+]
+
+const loadedEnvPaths = new Set<string>()
+
+for (const envConfigPath of envConfigPaths) {
+  if (!fs.existsSync(envConfigPath) || loadedEnvPaths.has(envConfigPath)) {
+    continue
+  }
+
+  donenvExpand.expand(
+    dotenv.config({
+      path: envConfigPath,
+      override: true,
+    })
+  )
+  loadedEnvPaths.add(envConfigPath)
+}
 
 // XXX In order to make calls to the foundation API we must issue tokens from an
 //     origin that is accessible to the foundation server. This rules out

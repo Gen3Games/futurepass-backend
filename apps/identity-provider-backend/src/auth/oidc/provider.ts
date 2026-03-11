@@ -1,6 +1,6 @@
 /**
  * OIDC Provider Configuration
- * 
+ *
  * This module configures the node-oidc-provider for FuturePass authentication.
  * It sets up claims, scopes, token handling, and integration with the FV user storage.
  */
@@ -60,7 +60,7 @@ const ResourceServersIndex: Record<string, ResourceServer> = {
 
 /**
  * Creates the OIDC provider configuration
- * 
+ *
  * @param config - OIDC provider configuration options
  * @returns node-oidc-provider Configuration object
  */
@@ -98,7 +98,7 @@ export function createOIDCConfiguration(config: OIDCProviderConfig): Configurati
         accountId: id,
         claims: async () => {
           const profile = await userStorage.findUserProfile(sub)
-          
+
           // Get FuturePass address
           const futurepass = await (async () => {
             const result = await accountIndexer.getLinkedFuturePassForEoa(user.eoa)
@@ -247,7 +247,6 @@ export function createOIDCConfiguration(config: OIDCProviderConfig): Configurati
         secure: true,
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
       },
       short: {
         signed: true,
@@ -279,8 +278,13 @@ export function createOIDCConfiguration(config: OIDCProviderConfig): Configurati
     // Error Handling
     // ========================================================================
     renderError(ctx, out, error) {
+      const description =
+        'error_description' in error && typeof error.error_description === 'string'
+          ? error.error_description
+          : undefined
+
       ctx.type = 'html'
-      ctx.body = createErrorPage(error.message, error.error_description)
+      ctx.body = createErrorPage(error.message, description)
     },
 
     // ========================================================================

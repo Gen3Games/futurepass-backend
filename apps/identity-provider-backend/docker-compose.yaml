@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   redis:
     image: redis:latest
@@ -7,42 +5,34 @@ services:
     ports:
       - '6379:6379'
 
-  localstack-main:
-    container_name: identity-provider-backend-localstack
-    image: localstack/localstack
-    environment:
-      - DYNAMODB_SHARE_DB=1
-      - MAIN_CONTAINER_NAME=identity-provider-backend-localstack
-      - PERSISTENCE=1
-      # - REQUIRE_PRO=1
+  scylla-alternator:
+    image: scylladb/scylla:6.1
+    container_name: scylla-alternator
+    command: >-
+      --overprovisioned 1
+      --smp 1
+      --memory 1G
+      --alternator-port 8000
+      --alternator-write-isolation=always_use_lwt
     ports:
-      - 127.0.0.1:4566:4566 # LocalStack Gateway
-      - 127.0.0.1:4510-4559:4510-4559 # external services port range
-      - 127.0.0.1:53:53 # DNS config (only required for Pro)
-      - 127.0.0.1:53:53/udp # DNS config (only required for Pro)
-      - 127.0.0.1:443:443 # LocalStack HTTPS Gateway (only required for Pro)
+      - 127.0.0.1:8000:8000
+      - 127.0.0.1:9042:9042
     volumes:
-      - ./.localstack:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./.scylla:/var/lib/scylla
 
-  dynamodb-admin:
-    image: aaronshaf/dynamodb-admin
+  scylla-bootstrap:
+    image: amazon/aws-cli:2.17.27
     depends_on:
-      - localstack-main
+      - scylla-alternator
     environment:
-      - DYNAMO_ENDPOINT=http://localstack-main:4566
-    ports:
-      - 127.0.0.1:8002:8001
-
-  terraform-local:
-    image: hashicorp/terraform:1.4.2
-    command: -c "terraform init -lock=false && terraform apply -auto-approve -lock=false"
+      - AWS_ACCESS_KEY_ID=alternator
+      - AWS_SECRET_ACCESS_KEY=alternator
+      - AWS_REGION=us-west-2
+      - DYNAMODB_ENDPOINT=http://scylla-alternator:8000
+    volumes:
+      - ./bootstrap-alternator.sh:/bootstrap-alternator.sh:ro
     entrypoint: sh
-    depends_on:
-      - localstack-main
-    volumes:
-      - './terraform:/terraform'
-    working_dir: /terraform/environments/local
+    command: /bootstrap-alternator.sh
 
   # To be uncommented after PFS-337 the issues have been fixed (https://futureverse.atlassian.net/jira/software/c/projects/PFS/boards/130?selectedIssue=PFS-337)
   # identity-provider:

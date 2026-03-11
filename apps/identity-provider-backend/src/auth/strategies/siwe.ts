@@ -1,16 +1,16 @@
 /**
  * SIWE (Sign-In with Ethereum) Authentication Strategy
- * 
+ *
  * This module implements the Sign-In with Ethereum (EIP-4361) authentication flow.
  * Users sign a message with their Ethereum wallet to prove ownership of their address.
- * 
+ *
  * @see https://eips.ethereum.org/EIPS/eip-4361
  * @see https://docs.login.xyz/
  */
 
-import { SiweMessage, SiweError } from 'siwe'
+import { SiweMessage } from 'siwe'
 import CSRF from 'csrf'
-import { either as E, Either } from 'fp-ts/Either'
+import * as E from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { AuthenticationError, SignInHeaders, SiweVerifyRequest } from '../types'
 
@@ -67,7 +67,7 @@ export class SiweAuthStrategy {
   /**
    * Generates a nonce for SIWE message signing
    * The nonce is a CSRF token that must be included in the SIWE message
-   * 
+   *
    * @returns A cryptographically secure nonce string
    */
   generateNonce(): string {
@@ -76,7 +76,7 @@ export class SiweAuthStrategy {
 
   /**
    * Verifies a CSRF token/nonce
-   * 
+   *
    * @param token - The token to verify
    * @returns true if valid, false otherwise
    */
@@ -86,11 +86,11 @@ export class SiweAuthStrategy {
 
   /**
    * Validates request headers for SIWE verification
-   * 
+   *
    * @param headers - Request headers object
    * @returns Either an error or the validated headers
    */
-  validateHeaders(headers: unknown): Either<Error, { csrfToken: string }> {
+  validateHeaders(headers: unknown): E.Either<Error, { csrfToken: string }> {
     const result = SignInHeaders.decode(headers)
     if (E.isLeft(result)) {
       return E.left(new Error('Missing or invalid x-csrf-token header'))
@@ -100,11 +100,11 @@ export class SiweAuthStrategy {
 
   /**
    * Validates request body for SIWE verification
-   * 
+   *
    * @param body - Request body object
    * @returns Either an error or the validated request
    */
-  validateBody(body: unknown): Either<Error, SiweVerifyRequest> {
+  validateBody(body: unknown): E.Either<Error, SiweVerifyRequest> {
     const result = SiweVerifyRequest.decode(body)
     if (E.isLeft(result)) {
       return E.left(new Error('Missing or invalid message/signature in request body'))
@@ -114,14 +114,14 @@ export class SiweAuthStrategy {
 
   /**
    * Verifies a SIWE message and signature
-   * 
+   *
    * This method performs the following validations:
    * 1. CSRF token verification
    * 2. SIWE message parsing
    * 3. Signature verification (proves address ownership)
    * 4. Domain and URI validation
    * 5. Timestamp validation (not expired, not too old)
-   * 
+   *
    * @param message - The SIWE message (JSON string)
    * @param signature - The hex-encoded signature
    * @param csrfToken - The CSRF token from headers
@@ -131,7 +131,7 @@ export class SiweAuthStrategy {
     message: string,
     signature: string,
     csrfToken: string
-  ): Promise<Either<AuthenticationError, SiweVerificationResult>> {
+  ): Promise<E.Either<AuthenticationError, SiweVerificationResult>> {
     // Step 1: Verify CSRF token
     if (!this.verifyNonce(csrfToken)) {
       return E.left(new AuthenticationError(
@@ -153,23 +153,33 @@ export class SiweAuthStrategy {
       }
 
       // Step 3: Validate the signature
-      const verificationResult = await siweMessage.verify({
-        signature,
-        domain: this.config.domain,
-        nonce: csrfToken,
-      })
+      const validatedMessage = await siweMessage.validate(signature)
 
-      if (!verificationResult.success) {
-        const errorMessage = verificationResult.error?.type ?? 'Signature verification failed'
+      if (validatedMessage.domain !== this.config.domain) {
         return E.left(new AuthenticationError(
-          errorMessage,
+          `Domain mismatch: expected ${this.config.domain}, got ${validatedMessage.domain}`,
+          4005002,
+          401
+        ))
+      }
+
+      if (validatedMessage.nonce !== csrfToken) {
+        return E.left(new AuthenticationError(
+          'Nonce mismatch in SIWE message',
+          4005002,
+          401
+        ))
+      }
+
+      if (validatedMessage.uri !== this.config.uri) {
+        return E.left(new AuthenticationError(
+          `URI mismatch: expected ${this.config.uri}, got ${validatedMessage.uri}`,
           4005002,
           401
         ))
       }
 
       // Step 4: Additional validations
-      const validatedMessage = verificationResult.data
 
       // Validate chain ID if present
       if (validatedMessage.chainId && validatedMessage.chainId !== this.config.chainId) {
@@ -191,33 +201,25 @@ export class SiweAuthStrategy {
       })
 
     } catch (error) {
-      if (error instanceof SiweError) {
-        return E.left(new AuthenticationError(
-          `SIWE validation failed: ${error.type}`,
-          4005004,
-          401
-        ))
-      }
-      
       const message = error instanceof Error ? error.message : 'Unknown error during SIWE verification'
-      return E.left(new AuthenticationError(message, 4005005, 500))
+      return E.left(new AuthenticationError(message, 4005004, 401))
     }
   }
 
   /**
    * Verifies a SIWE login_hint from an OIDC authorization request
-   * 
+   *
    * The login_hint is URL-encoded and contains the SIWE message parameters
    * Format: "eoa:domain=...&address=...&statement=...&uri=...&version=1&chainId=...&nonce=...&issuedAt=...&signature=..."
-   * 
+   *
    * @param loginHint - The login_hint parameter value (without "eoa:" prefix)
    * @returns Either an error or the verified address
    */
-  async verifyLoginHint(loginHint: string): Promise<Either<AuthenticationError, { address: string }>> {
+  async verifyLoginHint(loginHint: string): Promise<E.Either<AuthenticationError, { address: string }>> {
     try {
       const params = new URLSearchParams(loginHint)
       const signature = params.get('signature')
-      
+
       if (!signature) {
         return E.left(new AuthenticationError(
           'Missing signature in login_hint',
@@ -242,28 +244,20 @@ export class SiweAuthStrategy {
       siweMessage.chainId = this.config.chainId
 
       // Validate signature
-      const result = await siweMessage.verify({ signature })
+      const validatedMessage = await siweMessage.validate(signature)
 
-      if (!result.success) {
-        return E.left(new AuthenticationError(
-          'Invalid signature in login_hint',
-          4005007,
-          401
-        ))
-      }
-
-      return E.right({ address: result.data.address })
+      return E.right({ address: validatedMessage.address })
 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to verify login_hint'
-      return E.left(new AuthenticationError(message, 4005008, 400))
+      return E.left(new AuthenticationError(message, 4005007, 400))
     }
   }
 
   /**
    * Creates a SIWE message for the client to sign
    * This is a helper method for testing or server-side message generation
-   * 
+   *
    * @param address - The Ethereum address
    * @param nonce - The nonce (CSRF token)
    * @param statement - Optional statement to include
@@ -297,7 +291,7 @@ export class SiweAuthStrategy {
 
 /**
  * Creates a SIWE authentication strategy with the given configuration
- * 
+ *
  * @param config - SIWE configuration
  * @returns Configured SiweAuthStrategy instance
  */
@@ -307,12 +301,12 @@ export function createSiweStrategy(config: SiweConfig): SiweAuthStrategy {
 
 /**
  * Creates a SIWE strategy from environment variables
- * 
+ *
  * Required env vars:
  * - CSRF_SECRET
  * - OIDC_ISSUER (used for domain/uri)
  * - ETH_CHAIN_ID
- * 
+ *
  * @returns Configured SiweAuthStrategy instance
  */
 export function createSiweStrategyFromEnv(): SiweAuthStrategy {

@@ -24,6 +24,12 @@ export default class LaunchdarklyService {
   private launchdarklyClient: ld.LDClient
   private launchdarklyClientForFrontEnd: ld.LDClient
 
+  private static isDisabledForLocalEnv() {
+    return [C.LAUNCHDARKLY_SDK_KEY, C.LAUNCHDARKLY_FRONTEND_SDK_KEY].some(
+      (key) => key.trim() === '' || key.startsWith('dummy-')
+    )
+  }
+
   /**
    * Creates an instance of the LaunchdarklyService.
    * @param launchdarklyClient - The LaunchDarkly client for server-side flag evaluation.
@@ -44,6 +50,10 @@ export default class LaunchdarklyService {
   public static async getInstance() {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- a private static field is not always falsy
     if (!LaunchdarklyService.launchdarklyService) {
+      if (LaunchdarklyService.isDisabledForLocalEnv()) {
+        return null
+      }
+
       try {
         LaunchdarklyService.launchdarklyService = new LaunchdarklyService(
           ld.init(C.LAUNCHDARKLY_SDK_KEY),

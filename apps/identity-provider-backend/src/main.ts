@@ -124,7 +124,7 @@ async function main() {
   // dynamodb document client for oidc adapter
   const oidcConfigDynamodbClient = new AWS.DynamoDB.DocumentClient({
     // This is undefined in any environment that is not local
-    endpoint: C.LOCALSTACK_ENDPOINT,
+    endpoint: C.DYNAMODB_ENDPOINT,
   })
 
   //eslint-disable-next-line  @typescript-eslint/no-explicit-any -- the type is not defined in the aws-sdk
@@ -135,7 +135,7 @@ async function main() {
     AWSXRay.captureAWSv3Client(
       new DynamoDBClient({
         // This is undefined in any environment that is not local
-        endpoint: C.LOCALSTACK_ENDPOINT,
+        endpoint: C.DYNAMODB_ENDPOINT,
       })
     )
   )

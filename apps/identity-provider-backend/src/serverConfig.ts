@@ -234,6 +234,14 @@ export const config = (() => {
     get XRPL_JSON_PRC_URL() {
       return sdk.io.fromEnv('XRPL_JSON_PRC_URL')
     },
+    get DYNAMODB_ENDPOINT() {
+      const dynamoDbEndpoint = process.env.DYNAMODB_ENDPOINT
+      if (dynamoDbEndpoint != null && dynamoDbEndpoint !== '') {
+        return dynamoDbEndpoint
+      }
+
+      return sdk.io.fromEnv('LOCALSTACK_ENDPOINT', undefined)
+    },
 
     // there is a legacy naming issue here
     // todo: ETH_CHAIN_ID rename to EVM_CHAIN_ID; EVM_CHAIN_ID to ROOT_CHAIN_ID

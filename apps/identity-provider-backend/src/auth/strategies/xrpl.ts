@@ -1,15 +1,15 @@
 /**
  * XRPL (XRP Ledger) Wallet Authentication Strategy
- * 
+ *
  * This module implements authentication using XRPL wallets.
  * Users sign a transaction with their XRPL wallet to prove ownership.
  * The signature is verified and an EOA address is derived from the public key.
- * 
+ *
  * @see https://xrpl.org/
  */
 
 import { verifySignature } from 'verify-xrpl-signature'
-import { either as E, Either } from 'fp-ts/Either'
+import * as E from 'fp-ts/Either'
 import { AuthenticationError } from '../types'
 
 // ============================================================================
@@ -44,13 +44,13 @@ interface XrplSignatureResult {
 
 /**
  * Derives an Ethereum-compatible address pair from an XRPL public key
- * 
+ *
  * This is a placeholder implementation - the actual SDK function should be used
  * The real implementation uses:
  * 1. Decode the XRPL public key (ED25519 or SECP256k1)
  * 2. Hash the public key bytes
  * 3. Derive both the ETH address and XRPL r-address
- * 
+ *
  * @param publicKey - The XRPL public key (hex or ED-prefixed)
  * @returns Tuple of [eoa, rAddress]
  */
@@ -58,7 +58,7 @@ function deriveAddressPair(publicKey: string): [string, string] {
   // This would use the actual SDK implementation:
   // import * as sdk from '@futureverse/experience-sdk'
   // return sdk.deriveAddressPair(publicKey)
-  
+
   // For now, we'll need to import the actual SDK
   // This is a type stub
   throw new Error('deriveAddressPair not implemented - import from @futureverse/experience-sdk')
@@ -70,7 +70,7 @@ function deriveAddressPair(publicKey: string): [string, string] {
 
 export class XrplAuthStrategy {
   private readonly config: XrplConfig
-  
+
   // Import the actual SDK function when available
   private readonly deriveAddressPair: (publicKey: string) => [string, string]
 
@@ -84,14 +84,14 @@ export class XrplAuthStrategy {
 
   /**
    * Verifies an XRPL wallet authentication
-   * 
+   *
    * This method performs the following validations:
    * 1. Verify the transaction signature using the XRPL library
    * 2. Derive the r-address from the public key
    * 3. Ensure derived r-address matches the signer
    * 4. Derive the EOA from the public key
    * 5. Ensure derived EOA matches the provided EOA
-   * 
+   *
    * @param publicKey - The XRPL public key (hex-encoded or ED-prefixed)
    * @param transaction - The signed transaction blob
    * @param providedEoa - The EOA claimed by the client
@@ -101,7 +101,7 @@ export class XrplAuthStrategy {
     publicKey: string,
     transaction: string,
     providedEoa: string
-  ): Either<AuthenticationError, XrplVerificationResult> {
+  ): E.Either<AuthenticationError, XrplVerificationResult> {
     try {
       // Step 1: Verify the transaction signature
       const signatureResult = verifySignature(transaction) as XrplSignatureResult
@@ -150,23 +150,23 @@ export class XrplAuthStrategy {
 
   /**
    * Verifies an XRPL login_hint from an OIDC authorization request
-   * 
+   *
    * The login_hint format is:
    * "xrpl:{publicKey}:eoa:{eoaAddress}:tx:{signedTransaction}"
-   * 
+   *
    * @param loginHint - The login_hint parameter value (without "xrpl:" prefix)
    * @returns Either an error or the verification result
    */
-  verifyLoginHint(loginHint: string): Either<AuthenticationError, XrplVerificationResult> {
+  verifyLoginHint(loginHint: string): E.Either<AuthenticationError, XrplVerificationResult> {
     try {
       // Parse the login_hint
       // Expected format after removing "xrpl:" prefix:
       // {publicKey}:eoa:{eoaAddress}:tx:{transaction}
       // Or the simplified format from the existing code:
       // {publicKey}:eoa:{eoaAddress}:{transaction} (6 parts with "xrpl:" prefix)
-      
+
       const parts = loginHint.split(':')
-      
+
       // Handle different formats
       let publicKey: string
       let eoa: string
@@ -176,7 +176,7 @@ export class XrplAuthStrategy {
         // Format: publicKey:eoa:eoaAddress:transaction (without xrpl: prefix)
         // Or: publicKey:eoa:eoaAddress (then transaction is in last part)
         publicKey = parts[0]
-        
+
         // Find 'eoa' marker
         const eoaIndex = parts.indexOf('eoa')
         if (eoaIndex === -1 || eoaIndex + 1 >= parts.length) {
@@ -186,9 +186,9 @@ export class XrplAuthStrategy {
             400
           ))
         }
-        
+
         eoa = parts[eoaIndex + 1]
-        
+
         // Transaction is everything after EOA
         // Check if there's a 'tx' marker or just use the last part
         const txIndex = parts.indexOf('tx')
@@ -231,22 +231,22 @@ export class XrplAuthStrategy {
 
   /**
    * Validates XRPL public key format
-   * 
+   *
    * XRPL public keys can be:
    * - ED25519: Prefixed with "ED" followed by 64 hex characters
    * - SECP256k1: 66 hex characters
-   * 
+   *
    * @param publicKey - The public key to validate
    * @returns true if valid format
    */
   private isValidXrplPublicKey(publicKey: string): boolean {
     if (!publicKey) return false
-    
+
     // ED25519 keys start with "ED"
     if (publicKey.toUpperCase().startsWith('ED')) {
       return /^ED[A-Fa-f0-9]{64}$/i.test(publicKey)
     }
-    
+
     // SECP256k1 keys are hex-encoded
     return /^[A-Fa-f0-9]{66}$/.test(publicKey)
   }
@@ -258,7 +258,7 @@ export class XrplAuthStrategy {
 
 /**
  * Creates an XRPL authentication strategy with the given configuration
- * 
+ *
  * @param config - XRPL configuration
  * @param deriveAddressPairFn - Optional custom address derivation function
  * @returns Configured XrplAuthStrategy instance
@@ -272,10 +272,10 @@ export function createXrplStrategy(
 
 /**
  * Creates an XRPL strategy from environment variables
- * 
+ *
  * Required env vars:
  * - ETH_CHAIN_ID
- * 
+ *
  * @param deriveAddressPairFn - The SDK's address derivation function
  * @returns Configured XrplAuthStrategy instance
  */

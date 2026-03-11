@@ -156,6 +156,7 @@
     "wagmi": "^0.12.16",
     "wildcard": "^2.0.0",
     "ws": "^8.16.0",
+    "xrpl": "^4.4.0",
     "xrpl-accountlib": "^3.2.9",
     "xrpl-binary-codec-prerelease": "^7.0.1",
     "xumm": "^1.7.7"

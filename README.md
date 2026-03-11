@@ -44,12 +44,13 @@ After cloning the project from the GitHub repository, run the following command 
 pnpm install
 ```
 
-## Local DynamoDB
+## Local DynamoDB-Compatible Storage
 
-We use LocalStack to imitate the production environment. Currently, only DynamoDB is launched through LocalStack. To set it up:
+Local development now uses ScyllaDB Alternator instead of LocalStack. The backend still talks to a DynamoDB-compatible HTTP API, but the local stack is self-hosted and matches the migration target more closely.
 
-1. Add `127.0.0.1       localstack-main` to your `/etc/hosts` file
-2. Go to `http://localhost:8002` access Dynamodb admin panel
+1. Start the local stack with `pnpm dev:identity-provider-backend`
+2. Alternator will be exposed at `http://localhost:8000`
+3. The `scylla-bootstrap` job creates the required tables and GSIs automatically
 
 ## Dependencies
 

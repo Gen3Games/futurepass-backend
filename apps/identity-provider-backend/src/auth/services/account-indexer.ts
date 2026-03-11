@@ -1,11 +1,11 @@
 /**
  * Account Indexer Service
- * 
+ *
  * This service interfaces with the FuturePass account indexer API to look up
  * linked FuturePass accounts for EOAs and vice versa.
  */
 
-import { either as E, Either } from 'fp-ts/Either'
+import * as E from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { PathReporter } from 'io-ts/lib/PathReporter'
 import { FuturePassForEoaResponse, FuturePassAccount } from '../types'
@@ -56,7 +56,7 @@ export class AccountIndexerService {
 
   /**
    * Get the linked FuturePass for an EOA
-   * 
+   *
    * @param eoa - The EOA address to look up
    * @returns The linked FuturePass address or null if none exists
    */
@@ -73,14 +73,14 @@ export class AccountIndexerService {
 
       const raw = await response.text()
       const parsed = this.parseJSON(raw)
-      
+
       if (E.isLeft(parsed)) {
         console.warn(`Failed to parse account indexer response: ${parsed.left}`)
         return { linkedFuturepass: null }
       }
 
       const decoded = FuturePassForEoaResponse.decode(parsed.right)
-      
+
       if (E.isLeft(decoded)) {
         console.warn(`Failed to decode account indexer response: ${PathReporter.report(decoded).join(', ')}`)
         return { linkedFuturepass: null }
@@ -98,7 +98,7 @@ export class AccountIndexerService {
 
   /**
    * Get the linked EOAs for a FuturePass
-   * 
+   *
    * @param futurepass - The FuturePass address to look up
    * @returns The FuturePass account with linked EOAs
    */
@@ -115,14 +115,14 @@ export class AccountIndexerService {
 
       const raw = await response.text()
       const parsed = this.parseJSON(raw)
-      
+
       if (E.isLeft(parsed)) {
         console.warn(`Failed to parse account indexer response: ${parsed.left}`)
         return null
       }
 
       const decoded = FuturePassAccount.decode(parsed.right)
-      
+
       if (E.isLeft(decoded)) {
         console.warn(`Failed to decode account indexer response: ${PathReporter.report(decoded).join(', ')}`)
         return null
@@ -141,7 +141,7 @@ export class AccountIndexerService {
 
   /**
    * Check if an EOA has a linked FuturePass
-   * 
+   *
    * @param eoa - The EOA address to check
    * @returns true if the EOA has a linked FuturePass
    */
@@ -152,7 +152,7 @@ export class AccountIndexerService {
 
   /**
    * Resolve the FuturePass address for an EOA, returning the EOA itself if no FuturePass exists
-   * 
+   *
    * @param eoa - The EOA address
    * @returns The FuturePass address or the original EOA
    */
@@ -184,7 +184,7 @@ export class AccountIndexerService {
   /**
    * Parse JSON safely
    */
-  private parseJSON(raw: string): Either<string, unknown> {
+  private parseJSON(raw: string): E.Either<string, unknown> {
     try {
       return E.right(JSON.parse(raw))
     } catch (error) {
@@ -226,7 +226,7 @@ export class CachedAccountIndexer {
 
   async getLinkedFuturePassForEoa(eoa: string): Promise<LinkedFuturePassResult> {
     const cacheKey = `fp:${eoa.toLowerCase()}`
-    
+
     const cached = this.getFromCache<LinkedFuturePassResult>(cacheKey)
     if (cached !== undefined) {
       return cached
@@ -234,13 +234,13 @@ export class CachedAccountIndexer {
 
     const result = await this.indexer.getLinkedFuturePassForEoa(eoa)
     this.setInCache(cacheKey, result)
-    
+
     return result
   }
 
   async getLinkedEoasForFuturePass(futurepass: string): Promise<LinkedEoasResult | null> {
     const cacheKey = `eoas:${futurepass.toLowerCase()}`
-    
+
     const cached = this.getFromCache<LinkedEoasResult | null>(cacheKey)
     if (cached !== undefined) {
       return cached
@@ -248,7 +248,7 @@ export class CachedAccountIndexer {
 
     const result = await this.indexer.getLinkedEoasForFuturePass(futurepass)
     this.setInCache(cacheKey, result)
-    
+
     return result
   }
 
@@ -275,14 +275,14 @@ export class CachedAccountIndexer {
 
   private getFromCache<T>(key: string): T | undefined {
     const entry = this.cache.get(key) as CacheEntry<T> | undefined
-    
+
     if (!entry) return undefined
-    
+
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key)
       return undefined
     }
-    
+
     return entry.value
   }
 

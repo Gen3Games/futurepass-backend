@@ -19,6 +19,22 @@ import { revokeTokens } from '../../utils/session'
 import RouterService from '../routerService'
 
 const snowflake = new Snowflake()
+
+const serializeError = (error: unknown) => {
+  if (error instanceof Error) {
+    const errorWithCause = error as Error & { cause?: unknown }
+
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: errorWithCause.cause,
+    }
+  }
+
+  return error
+}
+
 export default class LoginRouterService extends RouterService {
   protected provider: Provider
   protected config: OIDCRoutesConfig
@@ -222,9 +238,31 @@ export default class LoginRouterService extends RouterService {
     )
     // if user does not exist or has not accepted terms, redirect to terms page
     if (user == null || !user.hasAcceptedTerms) {
-      await this.provider.interactionResult(req, res, {
-        sub: FVSub.encode(sub),
-      })
+      const encodedSub = FVSub.encode(sub)
+
+      identityProviderBackendLogger.debug(
+        `checkUserAndRedirect pending registration; encodedSub=${encodedSub}; hasAcceptedTerms=${user?.hasAcceptedTerms ?? 'null'}`,
+        {
+          methodName: `${this.checkUserAndRedirect.name}`,
+        }
+      )
+
+      try {
+        await this.provider.interactionResult(req, res, {
+          sub: encodedSub,
+        })
+      } catch (error) {
+        identityProviderBackendLogger.error(
+          `checkUserAndRedirect interactionResult failed: ${JSON.stringify(
+            serializeError(error)
+          )}`,
+          2003200,
+          {
+            methodName: `${this.checkUserAndRedirect.name}`,
+          }
+        )
+        throw error
+      }
 
       // let nonce: string | undefined
       if (sub.type === 'eoa') {
@@ -498,7 +536,7 @@ export default class LoginRouterService extends RouterService {
       | { type: 'Ethereum'; eoa: sdk.Address }
       | { type: 'XRPL'; publicKey: string }
   ) {
-    if (C.isDevelopment) {
+    if (C.isDevelopment || C.disableExternalDependencies) {
       return false
     }
 

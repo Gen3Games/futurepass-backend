@@ -29,6 +29,10 @@ export const identityRegistry =
   )
 
 export async function safeIdentityOf(eoa: string): Promise<string | null> {
+  if (C.disableExternalDependencies) {
+    return null
+  }
+
   const x = await identityRegistry.futurepassOf(eoa)
   if (x === nullAddress) {
     return null

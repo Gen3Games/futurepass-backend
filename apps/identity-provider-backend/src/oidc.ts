@@ -147,6 +147,10 @@ export async function createOIDCRoutes(app: Express, config: OIDCRoutesConfig) {
               return futurepass
             }
 
+            if (C.disableExternalDependencies) {
+              return user.eoa
+            }
+
             // User could login with the delegated account
             const eoaR = sdk.Address.decode(user.eoa)
             if (E.isRight(eoaR)) {

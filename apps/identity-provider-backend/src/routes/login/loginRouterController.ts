@@ -17,6 +17,21 @@ import LoginSiweRouterController from './siwe/loginSiweRouterController'
 import LoginSocialRouterController from './social/loginSocialRouterController'
 import LoginXrplRouterController from './xrpl/loginXrplRouterController'
 
+const serializeError = (error: unknown) => {
+  if (error instanceof Error) {
+    const errorWithCause = error as Error & { cause?: unknown }
+
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: errorWithCause.cause,
+    }
+  }
+
+  return error
+}
+
 export default class LoginRouterController extends RouterController {
   private readonly loginRouter: Router = express.Router()
   private provider: Provider
@@ -73,7 +88,7 @@ export default class LoginRouterController extends RouterController {
       return res.redirect(loginRedirectUri)
     } catch (e: unknown) {
       identityProviderBackendLogger.error(
-        `Failed to login: ${JSON.stringify(e)}}`,
+        `Failed to login: ${JSON.stringify(serializeError(e))}}`,
         2003020,
         {
           methodName: `${this.loginCallback.name}`,

@@ -206,6 +206,10 @@ async function main() {
         const decodedSubEoa = eoaR.right
 
         if (userData == null) {
+          if (C.disableExternalDependencies) {
+            return null
+          }
+
           // it is probably becasue the user login with delegated EOA
           // query the delegated account indexer to find the correct mapping
 
@@ -274,6 +278,14 @@ async function main() {
             hasAcceptedTerms: true,
           }
         } else {
+          if (C.disableExternalDependencies) {
+            return {
+              sub,
+              eoa: sub.eoa,
+              hasAcceptedTerms: userData.hasAcceptedTerms,
+            }
+          }
+
           const foundFuturepass = await safeIdentityOf(decodedSubEoa)
 
           if (foundFuturepass == null) {
@@ -342,6 +354,10 @@ async function main() {
           }
         }
 
+        if (C.disableExternalDependencies) {
+          return null
+        }
+
         // TODO we could cache this look up
         const info = await FoundationAPI.keyInfo(
           C.FOUNDATION_API_BASE_URL,
@@ -376,6 +392,13 @@ async function main() {
       return userDB.findUserProfileBySub(sub)
     },
     async requestFuturepassCreation(eoa: ETHAddress): Promise<void> {
+      if (C.disableExternalDependencies) {
+        identityProviderBackendLogger.info(
+          `[POST /login/accept_terms][E][${eoa}] skipping FuturePass creation because external dependencies are disabled`
+        )
+        return
+      }
+
       const actionStart = Date.now()
       identityProviderBackendLogger.debug(
         `[POST /login/accept_terms][E][${eoa}] Action start: get fp at: ${actionStart}`,
@@ -428,6 +451,14 @@ async function main() {
     async findOrCreateCustodialAccount(
       sub: FVSub
     ): Promise<FVCustodialAccount> {
+      if (C.disableExternalDependencies) {
+        throw new Error(
+          `Custodial account creation is unavailable when external dependencies are disabled for local rebuild: ${FVSub.encode(
+            sub
+          )}`
+        )
+      }
+
       const { publicKey } = await FoundationAPI.getOrCreateKey(
         C.FOUNDATION_API_BASE_URL,
         await FoundationAPI.createAuthToken({

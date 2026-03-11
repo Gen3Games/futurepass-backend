@@ -16,10 +16,16 @@ import {
   RedisOtpStorage,
 } from '../src/services/otp/IOtpStorage'
 import { parseClientRedirectUrls } from './common'
-import { createMailer } from './services/mailer/email'
+import { createMailer, type Mailer } from './services/mailer/email'
 import { EmailOtpRateLimiter } from './services/otp/EmailOtpRateLimiter'
 import { SmsOtpRateLimiter } from './services/otp/SmsOtpRateLimiter'
 import { KeyStore } from './types'
+
+const noopMailer: Mailer = {
+  async sendEmail() {
+    return
+  },
+}
 
 export const config = (() => {
   const LOCALHOST_IP = '127.0.0.1'
@@ -98,6 +104,13 @@ export const config = (() => {
     },
     get loggerLevel() {
       return sdk.io.fromEnv('LOGGER_LEVEL', 'debug')
+    },
+    get disableExternalDependencies() {
+      return sdk.io.fromEnv<boolean>(
+        'DISABLE_EXTERNAL_DEPENDENCIES',
+        this.isDevelopment,
+        (i: string) => BooleanFromString.decode(i)
+      )
     },
     get ORIGIN() {
       const { origin: ORIGIN } = new URL(
@@ -430,8 +443,7 @@ export const config = (() => {
     get smsOtpRateLimiter() {
       let smsOtpRateLimiter: SmsOtpRateLimiter | null = null
 
-      // FIXME: change this back to !this.isDevelopment
-      if (this.isDevelopment) {
+      if (!this.disableExternalDependencies) {
         const otpStorage =
           this.redisClient == null
             ? new MemoryOtpStorage()
@@ -456,6 +468,10 @@ export const config = (() => {
       return new EmailOtpRateLimiter(otpStorage)
     },
     get mailer() {
+      if (this.disableExternalDependencies) {
+        return noopMailer
+      }
+
       return createMailer({
         apiKey: SEND_GRID_API_KEY,
         from: SEND_GRID_FROM_EMAIL,

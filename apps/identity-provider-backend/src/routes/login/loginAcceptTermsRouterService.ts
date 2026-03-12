@@ -125,17 +125,6 @@ export default class LoginAcceptTermsRouterService extends LoginRouterService {
     clientIp: string | null,
     token: string
   ) {
-    if (C.disableExternalDependencies) {
-      identityProviderBackendLogger.debug(
-        '[POST /login/accept_terms] skipping hCaptcha verification because external dependencies are disabled',
-        {
-          methodName: `${this.verifyHCaptcha.name}`,
-        }
-      )
-
-      return
-    }
-
     if (clientIp == null) {
       identityProviderBackendLogger.error(
         `[POST /login/accept_terms][E] returning 400 no ip address found`,

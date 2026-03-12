@@ -1,6 +1,5 @@
 import * as sdk from '@futureverse/experience-sdk'
 import { NativeFuturePassIdentityRegistry__factory } from '@futureverse/identity-contract-bindings'
-import AWSXRay from 'aws-xray-sdk'
 import { deriveAddress } from 'ripple-keypairs'
 import { CodeSystem } from './logger'
 import { config as C } from './serverConfig'
@@ -45,24 +44,7 @@ export const generateErrorRouteUri = (errorCode: number) => {
 }
 
 export const getTraceData = () => {
-  try {
-    const segment = AWSXRay.getSegment() as AWSXRay.Segment
-    // link aws cloudwatch logs to xray trace
-    segment.addPluginData({
-      cloudwatch_logs: [
-        {
-          log_group: SERVICE_NAME,
-        },
-      ],
-      resource_names: [SERVICE_NAME],
-    })
-    return {
-      xray_trace_id: segment ? segment.trace_id : 'N/A',
-    }
-  } catch (error) {
-    // Handle the case where no segment is initiated
-    return {
-      xray_trace_id: 'N/A',
-    }
+  return {
+    xray_trace_id: 'N/A',
   }
 }

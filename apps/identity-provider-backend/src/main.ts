@@ -8,7 +8,6 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 
 import * as sdk from '@futureverse/experience-sdk'
 import AWS from 'aws-sdk'
-import AWSXRay from 'aws-xray-sdk'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 
@@ -108,7 +107,6 @@ async function main() {
 
   server.set('trust proxy', 1) // trust first proxy
 
-  server.use(AWSXRay.express.openSegment(SERVICE_NAME))
   server.use(bodyParser.json())
   server.use(bodyParser.urlencoded({ extended: true }))
   server.use(cookieParser())
@@ -139,9 +137,6 @@ async function main() {
   AWS.config.update({
     cloudwatch: {},
   })
-  AWSXRay.captureAWS(AWS)
-  AWSXRay.captureHTTPsGlobal(http)
-  AWSXRay.captureHTTPsGlobal(https)
 
   // dynamodb document client for oidc adapter
   const oidcConfigDynamodbClient = new AWS.DynamoDB.DocumentClient({
@@ -149,17 +144,12 @@ async function main() {
     endpoint: C.DYNAMODB_ENDPOINT,
   })
 
-  //eslint-disable-next-line  @typescript-eslint/no-explicit-any -- the type is not defined in the aws-sdk
-  AWSXRay.captureAWSClient((oidcConfigDynamodbClient as any).service)
-
   // dynamodb document client for oidc config
   const documentClient = DynamoDBDocument.from(
-    AWSXRay.captureAWSv3Client(
-      new DynamoDBClient({
-        // This is undefined in any environment that is not local
-        endpoint: C.DYNAMODB_ENDPOINT,
-      })
-    )
+    new DynamoDBClient({
+      // This is undefined in any environment that is not local
+      endpoint: C.DYNAMODB_ENDPOINT,
+    })
   )
 
   const userDB = new DynamodbFVUserStorage(documentClient)
@@ -725,8 +715,6 @@ async function main() {
   })
 
   server.use(oidcProvider.callback())
-
-  server.use(AWSXRay.express.closeSegment())
 
   await redisSubscriber.start()
   futurepassCreationQueue

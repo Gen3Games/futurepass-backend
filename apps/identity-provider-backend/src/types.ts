@@ -143,21 +143,23 @@ function unreachable(_x: never): never {
   throw new Error(`This should be unreachable!`)
 }
 
-export const HCaptchaResponse = t.type(
-  {
-    success: t.boolean,
-    hostname: t.string,
-    score: t.optional(t.number),
-    behavior_counts: t.optional(
-      t.type({
+export const HCaptchaResponse = t.intersection(
+  [
+    t.type({
+      success: t.boolean,
+    }),
+    t.partial({
+      hostname: t.string,
+      score: t.number,
+      behavior_counts: t.type({
         ip: t.optional(t.number),
         ip_ua: t.optional(t.number),
         subnet: t.optional(t.number),
         ip_device: t.optional(t.number),
         device: t.optional(t.number),
-      })
-    ),
-  },
+      }),
+    }),
+  ],
   'HCaptchaResponse'
 )
 export type HCaptchaResponse = t.TypeOf<typeof HCaptchaResponse>

@@ -47,13 +47,16 @@ export default function Terms(props: Props) {
           return
         }
 
-        const response = await fetch(`${window.location.pathname}`, {
+        const response = await fetch(
+          `${window.location.pathname}${window.location.search}`,
+          {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ token: hCaptchaToken }),
-        })
+          }
+        )
 
         if (response.status === 200) {
           const outR = t

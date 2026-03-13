@@ -169,7 +169,20 @@ export default class LoginAcceptTermsRouterService extends LoginRouterService {
         }),
       {
         200: (raw) => {
-          const r = sdk.io.fromJSONString(HCaptchaResponse, raw)
+          const normalizedRaw = (() => {
+            try {
+              const parsed = JSON.parse(raw) as Record<string, unknown>
+              if (parsed.hostname == null) {
+                parsed.hostname = res.locals.idpHost ?? ''
+              }
+
+              return JSON.stringify(parsed)
+            } catch {
+              return raw
+            }
+          })()
+
+          const r = sdk.io.fromJSONString(HCaptchaResponse, normalizedRaw)
           const out: E.Either<
             string,
             t.TypeOf<typeof HCaptchaResponse>
@@ -420,7 +433,7 @@ export default class LoginAcceptTermsRouterService extends LoginRouterService {
       const actionEnd = Date.now()
       identityProviderBackendLogger.debug(
         `[POST /login/accept_terms][E][${requestId}] Action end: create fp ends at: ${actionEnd}, duration: ${
-          actionStart - actionEnd
+          actionEnd - actionStart
         } milliseconds`,
         {
           methodName: `${this.findOrCreateUser.name}`,
@@ -546,7 +559,7 @@ export default class LoginAcceptTermsRouterService extends LoginRouterService {
     let actionEnd = Date.now()
     identityProviderBackendLogger.debug(
       `[POST /login/accept_terms][E][${requestId}] Action end: verify h-captcha token ends at: ${actionEnd}, duration: ${
-        actionStart - actionEnd
+        actionEnd - actionStart
       } milliseconds`,
       {
         methodName: `${this.acceptTerms.name}`,
@@ -570,7 +583,7 @@ export default class LoginAcceptTermsRouterService extends LoginRouterService {
       actionEnd = Date.now()
       identityProviderBackendLogger.debug(
         `[POST /login/accept_terms][E][${requestId}] Action end: verify rate limit ends at: ${actionEnd}, duration: ${
-          actionStart - actionEnd
+          actionEnd - actionStart
         } milliseconds`,
         {
           methodName: `${this.acceptTerms.name}`,

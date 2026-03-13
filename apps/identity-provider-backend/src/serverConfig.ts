@@ -112,6 +112,13 @@ export const config = (() => {
         (i: string) => BooleanFromString.decode(i)
       )
     },
+    get allowInsecureLocalhostRedirects() {
+      return sdk.io.fromEnv<boolean>(
+        'ALLOW_INSECURE_LOCALHOST_REDIRECTS',
+        false,
+        (i: string) => BooleanFromString.decode(i)
+      )
+    },
     get ORIGIN() {
       const { origin: ORIGIN } = new URL(
         sdk.io.fromEnv('OIDC_HOSTNAME', 'http://localhost')

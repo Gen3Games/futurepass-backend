@@ -5,6 +5,8 @@ import { Express } from 'express'
 import session from 'express-session'
 import { either as E } from 'fp-ts'
 import { Redis } from 'ioredis'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import wildcard from 'wildcard'
 import { IOtpStorage } from '../src/services/otp/IOtpStorage'
@@ -71,7 +73,53 @@ export type OIDCRoutesConfig = {
   safeIdentityOf: (eoa: string) => Promise<string | null>
 }
 
+function enableInsecureLocalhostRedirects() {
+  if (!C.allowInsecureLocalhostRedirects) {
+    return
+  }
+
+  const clientSchemaPath = path.resolve(
+    process.cwd(),
+    'node_modules/oidc-provider/lib/helpers/client_schema.js'
+  )
+
+  if (!fs.existsSync(clientSchemaPath)) {
+    identityProviderBackendLogger.warn(
+      `Skipping insecure localhost redirect patch because ${clientSchemaPath} does not exist`,
+      1000001
+    )
+    return
+  }
+
+  const source = fs.readFileSync(clientSchemaPath, 'utf8')
+  const patched = source
+    .replace(
+      /^(\s*this\.invalidate\(`\$\{label\} for web clients using implicit flow MUST only register URLs using the https scheme`, 'implicit-force-https'\);)$/m,
+      '// $1'
+    )
+    .replace(
+      /^(\s*this\.invalidate\(`\$\{label\} for web clients using implicit flow must not be using localhost`, 'implicit-forbid-localhost'\);)$/m,
+      '// $1'
+    )
+
+  if (patched === source) {
+    identityProviderBackendLogger.info(
+      'Insecure localhost redirect patch was already applied or no matching oidc-provider guards were found',
+      1000002
+    )
+    return
+  }
+
+  fs.writeFileSync(clientSchemaPath, patched)
+  identityProviderBackendLogger.warn(
+    'Enabled insecure localhost and http redirect URIs for oidc-provider via ALLOW_INSECURE_LOCALHOST_REDIRECTS',
+    1000003
+  )
+}
+
 export async function createOIDCRoutes(app: Express, config: OIDCRoutesConfig) {
+  enableInsecureLocalhostRedirects()
+
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- hack to get esm working in nx
   const { default: OIDCProvider } = (await eval(`import('oidc-provider')`)) as {
     default: new (issuer: string, configuration?: Configuration) => OIDCProvider

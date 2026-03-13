@@ -12,9 +12,14 @@ export class FuturepassCreationQueue {
   private keyPair = this.keyring.addFromSeed(hexToU8a(this.privateKey))
   private queueKey = 'futurepass_creation_queue'
   private singleInstanceLock = 'force_single_instance_queue'
+  private lockValue = `${process.pid}:${Date.now()}`
+  private lockTtlSeconds = 120
+  private lockRetryDelay = 5000
   private retryLimit = 50
   private retryCount = 0
   private initialRetryDelay = 100
+  private isQueueRunning = false
+  private retryTimer: NodeJS.Timeout | null = null
   private luaScriptSha
   private api
   private luaScript = `
@@ -49,6 +54,47 @@ export class FuturepassCreationQueue {
     private logger,
     private maxItems: number
   ) {}
+
+  private acquireLock = async () => {
+    const result = await this.redis.set(
+      this.singleInstanceLock,
+      this.lockValue,
+      'EX',
+      this.lockTtlSeconds,
+      'NX'
+    )
+
+    return result === 'OK'
+  }
+
+  private refreshLock = async () => {
+    const currentLockValue = await this.redis.get(this.singleInstanceLock)
+
+    if (currentLockValue !== this.lockValue) {
+      return false
+    }
+
+    const result = await this.redis.set(
+      this.singleInstanceLock,
+      this.lockValue,
+      'EX',
+      this.lockTtlSeconds,
+      'XX'
+    )
+
+    return result === 'OK'
+  }
+
+  private scheduleLockRetry = () => {
+    if (this.retryTimer != null) {
+      return
+    }
+
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null
+      void this.startQueue()
+    }, this.lockRetryDelay)
+  }
 
   private executeRetrieveBatchTransaction = async () => {
     await this.redis.watch(this.queueKey)
@@ -88,9 +134,12 @@ export class FuturepassCreationQueue {
   private startQueueWithRetries = async () => {
     let delay = this.initialRetryDelay
     while (this.retryCount < this.retryLimit) {
-      // refresh the lock expiry time
-      await this.redis.setnx(this.singleInstanceLock, 'INIT_LOCK')
-      await this.redis.expire(this.singleInstanceLock, '120')
+      const hasLock = await this.refreshLock()
+
+      if (!hasLock) {
+        throw new Error('Queue lock lost')
+      }
+
       let batchOfEoas: string[] = []
 
       try {
@@ -143,16 +192,20 @@ export class FuturepassCreationQueue {
   }
 
   public startQueue = async () => {
-    // Using locking mechanism to only run the queue in one replica
-    const shouldInit = await this.redis.setnx(
-      this.singleInstanceLock,
-      'INIT_LOCK'
-    )
-    this.logger.info(`start_queue_lock ${shouldInit}`)
-
-    if (shouldInit === 0) {
+    if (this.isQueueRunning) {
       return
     }
+
+    // Using locking mechanism to only run the queue in one replica
+    const shouldInit = await this.acquireLock()
+    this.logger.info(`start_queue_lock ${shouldInit ? 1 : 0}`)
+
+    if (!shouldInit) {
+      this.scheduleLockRetry()
+      return
+    }
+
+    this.isQueueRunning = true
 
     try {
       this.luaScriptSha = await this.redis.script('LOAD', this.luaScript)
@@ -162,11 +215,20 @@ export class FuturepassCreationQueue {
       console.error('Error:', err)
       this.logger.error(`error getApi - ${err.message}`, 4007000)
     } finally {
+      this.isQueueRunning = false
       await this.unLockQueue()
     }
   }
 
-  public unLockQueue = async () => this.redis.del(this.singleInstanceLock)
+  public unLockQueue = async () => {
+    const currentLockValue = await this.redis.get(this.singleInstanceLock)
+
+    if (currentLockValue !== this.lockValue) {
+      return 0
+    }
+
+    return this.redis.del(this.singleInstanceLock)
+  }
 
   callExtrinsic = (
     extrinsic: SubmittableExtrinsic<'promise', ISubmittableResult>,

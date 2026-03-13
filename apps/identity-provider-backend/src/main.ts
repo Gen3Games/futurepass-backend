@@ -399,7 +399,7 @@ async function main() {
       const actionEnd = Date.now()
       identityProviderBackendLogger.debug(
         `[POST /login/accept_terms][E][${eoa}] Action end: get fp ends at: ${actionEnd}, duration: ${
-          actionStart - actionEnd
+          actionEnd - actionStart
         } milliseconds`,
         {
           methodName: `${fvAdapter.requestFuturepassCreation.name}`,
@@ -517,6 +517,96 @@ async function main() {
     '/login/email',
     '/login/email/verify',
   ]
+
+  const createForwardedProxyHeaders = (req: Request, signedToken: string) => {
+    const forwardedHeaders: Record<string, string> = {
+      Authorization: `Bearer ${signedToken}`,
+    }
+
+    const headerAllowList = new Set([
+      'accept',
+      'accept-language',
+      'cookie',
+      'content-type',
+      'origin',
+      'referer',
+      'user-agent',
+      'x-forwarded-for',
+      'x-forwarded-host',
+      'x-forwarded-proto',
+      'x-real-ip',
+      'sec-ch-ua',
+      'sec-ch-ua-mobile',
+      'sec-ch-ua-platform',
+      'sec-fetch-dest',
+      'sec-fetch-mode',
+      'sec-fetch-site',
+    ])
+
+    Object.entries(req.headers).forEach(([key, value]) => {
+      if (!headerAllowList.has(key) || typeof value !== 'string') {
+        return
+      }
+
+      forwardedHeaders[key] = value
+    })
+
+    return forwardedHeaders
+  }
+
+  const forwardFrontendProxyRequest = async (
+    forwardOrigin: string,
+    forwardUri: string,
+    headers: Record<string, string>,
+    body: unknown
+  ) => {
+    const targetUrl = new URL(`${forwardOrigin}${forwardUri}`)
+    const requestBody = JSON.stringify(body)
+    const requestHeaders = {
+      ...headers,
+      'content-length': Buffer.byteLength(requestBody).toString(),
+    }
+
+    return await new Promise<{
+      status: number
+      headers: http.IncomingHttpHeaders
+      body: unknown
+    }>((resolve, reject) => {
+      const transport = targetUrl.protocol === 'https:' ? https : http
+      const proxyRequest = transport.request(
+        targetUrl,
+        {
+          method: 'POST',
+          headers: requestHeaders,
+        },
+        (proxyResponse) => {
+          const chunks: Buffer[] = []
+
+          proxyResponse.on('data', (chunk: Buffer | string) => {
+            chunks.push(
+              typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+            )
+          })
+
+          proxyResponse.on('end', () => {
+            const rawBody = Buffer.concat(chunks).toString('utf8')
+            const parsedBody =
+              rawBody.length === 0 ? null : JSON.parse(rawBody)
+
+            resolve({
+              status: proxyResponse.statusCode ?? 500,
+              headers: proxyResponse.headers,
+              body: parsedBody,
+            })
+          })
+        }
+      )
+
+      proxyRequest.on('error', reject)
+      proxyRequest.write(requestBody)
+      proxyRequest.end()
+    })
+  }
 
   /**
    *
@@ -641,19 +731,99 @@ async function main() {
   )
 
   server.post(identityProviderFrontendProxiesRoutes, async (req, res) => {
-    const verifiedCookies = CO.hush(RedirectionPayload.decode(req.cookies))
-    if (verifiedCookies != null) {
+    const redirectionPayload = await (async () => {
+      const tokenFromQuery =
+        typeof req.query.token === 'string' ? req.query.token : null
+      if (tokenFromQuery != null && isJwtFormat(tokenFromQuery)) {
+        try {
+          const verifiedToken = await njose.JWS.createVerify(keystore).verify(
+            tokenFromQuery
+          )
+          const verifiedPayload = CO.hush(
+            JwsVerifiedTokenPayload.decode(
+              JSON.parse(verifiedToken.payload.toString())
+            )
+          )
+
+          if (
+            verifiedPayload != null &&
+            Date.now() < verifiedPayload.exp * 1000
+          ) {
+            identityProviderBackendLogger.warn(
+              `Frontend proxy used query token for ${req.path}`,
+              2001106
+            )
+
+            return {
+              account: verifiedPayload.account,
+              nonce: verifiedPayload.nonce,
+            }
+          }
+        } catch {
+          // Fall through to cookie/referer-based validation.
+        }
+      }
+
+      const verifiedCookies = CO.hush(RedirectionPayload.decode(req.cookies))
+      if (verifiedCookies != null) {
+        return verifiedCookies
+      }
+
+      const referer = req.get('referer')
+      if (referer == null) {
+        return null
+      }
+
+      try {
+        const refererUrl = new URL(referer)
+        const token = refererUrl.searchParams.get('token')
+        if (token == null || !isJwtFormat(token)) {
+          return null
+        }
+
+        const verifiedToken = await njose.JWS.createVerify(keystore).verify(token)
+        const verifiedPayload = CO.hush(
+          JwsVerifiedTokenPayload.decode(
+            JSON.parse(verifiedToken.payload.toString())
+          )
+        )
+
+        if (verifiedPayload == null) {
+          return null
+        }
+
+        if (Date.now() >= verifiedPayload.exp * 1000) {
+          return null
+        }
+
+        identityProviderBackendLogger.warn(
+          `Frontend proxy fallback used referer token for ${req.path}`,
+          2001105
+        )
+
+        return {
+          account: verifiedPayload.account,
+          nonce: verifiedPayload.nonce,
+        }
+      } catch {
+        return null
+      }
+    })()
+
+    if (redirectionPayload != null) {
       const payload = {
-        account: verifiedCookies.account,
-        nonce: verifiedCookies.nonce,
+        account: redirectionPayload.account,
+        nonce: redirectionPayload.nonce,
         exp: new Date(new Date().getTime() + 3 * 60000).getTime(),
       }
-      const signedToken = await njose.JWS.createSign(
+      const signedToken = String(
+        await njose.JWS.createSign(
         { format: 'compact' },
         keystore.all()
       )
         .update(JSON.stringify(payload), 'utf8')
         .final()
+      )
 
       const forwaredUri = (() => {
         switch (req.path) {
@@ -676,37 +846,48 @@ async function main() {
         }
       })()
 
-      const forwardedHeaders: Record<string, string> = {}
-      Object.keys(req.headers).forEach((key) => {
-        const value = req.headers[key]
-        if (typeof value === 'string') {
-          forwardedHeaders[key] = value
-        }
-      })
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions -- it is safe since we know that signedToken can be converted to a string
-      forwardedHeaders['Authorization'] = `Bearer ${signedToken}`
+      const forwardedHeaders = createForwardedProxyHeaders(req, signedToken)
 
       const forwardOrigin = res.locals.idpOrigin ?? C.ORIGIN
       try {
-        const response = await fetch(`${forwardOrigin}${forwaredUri}`, {
-          method: 'POST',
-          headers: forwardedHeaders,
-          body: JSON.stringify(req.body),
-        })
+        const response = await forwardFrontendProxyRequest(
+          forwardOrigin,
+          forwaredUri,
+          forwardedHeaders,
+          req.body
+        )
 
         // todo: update the following logic with the following steps：
         // 1, formalize the response. The response from backend endpoints could have redirection or different code, we should only process the response.ok with the current logic
         // 2, add logic the handle response based on its code accordingly
 
         res.status(response.status)
-        response.headers.forEach((value, key) => {
+        Object.entries(response.headers).forEach(([key, value]) => {
+          if (value == null) {
+            return
+          }
+
           res.setHeader(key, value)
         })
-        return res.send(await response.json())
+        return res.send(response.body)
       } catch (err) {
+        identityProviderBackendLogger.error(
+          `Frontend proxy request failed for ${req.path}: ${JSON.stringify({
+            error: err instanceof Error ? err.message : err,
+            forwardOrigin,
+            forwardUri: forwaredUri,
+          })}`,
+          4004801
+        )
+
         return res.status(500).redirect(generateErrorRouteUri(4004801))
       }
     }
+
+    identityProviderBackendLogger.error(
+      `Invalid frontend proxy credentials for ${req.path}`,
+      4004800
+    )
 
     return res.status(500).send({
       code: CodeSystem.getCode(4004800, 'Response'),

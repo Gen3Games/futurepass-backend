@@ -23,6 +23,7 @@
     "exec:script": "TS_NODE_COMPILER_OPTIONS='{\"noUnusedLocals\": false}' node -r tsconfig-paths/register -r ts-node/register",
     "createLDFlag": "pnpm exec node ./apps/identity-provider-backend/src/scripts/createLaunchdarklyFlag.mjs",
     "deleteLDFlag": "pnpm exec node ./apps/identity-provider-backend/src/scripts/deleteLaunchdarklyFlag.mjs",
+    "deleteUserDbRecords": "pnpm exec node ./apps/identity-provider-backend/src/scripts/deleteUserDbRecords.mjs",
     "publish-lib": "node ./scripts/packagePublishing/prepublish.js"
   },
   "private": true,

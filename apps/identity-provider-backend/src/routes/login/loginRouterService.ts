@@ -1,5 +1,4 @@
 import * as sdk from '@futureverse/experience-sdk'
-import { ethers } from 'ethers'
 import { Request, Response } from 'express'
 import * as E from 'fp-ts/Either'
 import * as t from 'io-ts'
@@ -8,13 +7,12 @@ import { Snowflake } from 'nodejs-snowflake'
 import Provider from 'oidc-provider'
 import { SiweMessage } from 'siwe'
 import { verifySignature } from 'verify-xrpl-signature'
-import * as xrpl from 'xrpl'
 import * as CO from '../../common'
 import { identityProviderBackendLogger } from '../../logger'
 import { OIDCRoutesConfig } from '../../oidc'
 import { config as C } from '../../serverConfig'
 import { FVSub, FVUser } from '../../types'
-import { deriveRAddress, generateErrorRouteUri } from '../../utils'
+import { generateErrorRouteUri } from '../../utils'
 import { revokeTokens } from '../../utils/session'
 import RouterService from '../routerService'
 
@@ -536,50 +534,11 @@ export default class LoginRouterService extends RouterService {
       | { type: 'Ethereum'; eoa: sdk.Address }
       | { type: 'XRPL'; publicKey: string }
   ) {
-    if (C.isDevelopment || C.disableExternalDependencies) {
-      return false
-    }
-
-    if (req.type === 'Ethereum') {
-      // check if eth balance is 0
-      const provider = new ethers.providers.JsonRpcProvider(
-        `${C.ALCHEMY_JSON_PRC_PROVIDER_URL}`
-      )
-      const balance = await provider.getBalance(req.eoa)
-
-      identityProviderBackendLogger.debug(
-        `isTwoFactorAuthRequired eoa=${req.eoa.toLowerCase()}; ethBalance=${ethers.utils.formatEther(
-          balance
-        )}`,
-        { methodName: `${this.isTwoFactorAuthRequired.name}` }
-      )
-      return balance.eq(0)
-    } else {
-      // check if xrpl balance is 0
-      const rAddress = deriveRAddress(req.publicKey)
-      const client = new xrpl.Client(C.XRPL_JSON_PRC_URL)
-      try {
-        await client.connect()
-        const response = await client.request({
-          command: 'account_info',
-          account: rAddress,
-        })
-
-        const balance = ethers.BigNumber.from(
-          response.result.account_data.Balance
-        )
-        identityProviderBackendLogger.debug(
-          `isTwoFactorAuthRequired rAddress=${rAddress}; xrplBalance=${balance.toString()}`,
-          { methodName: `${this.isTwoFactorAuthRequired.name}` }
-        )
-        return balance.eq(0)
-      } catch (e) {
-        // ignore, as it is not a critical error and caused because of account not found/activated
-      } finally {
-        await client.disconnect()
-      }
-      return true
-    }
+    identityProviderBackendLogger.stream(
+      `2FA gate disabled for ${req.type} login flow`,
+      2001004
+    )
+    return false
   }
 
   private async isTwoFactorAuthVerified(eoa: sdk.Address) {

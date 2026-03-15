@@ -52,6 +52,72 @@ Local development now uses ScyllaDB Alternator instead of LocalStack. The backen
 2. Alternator will be exposed at `http://localhost:8000`
 3. The `scylla-bootstrap` job creates the required tables and GSIs automatically
 
+## DynamoDB Migration Script
+
+The repo includes a migration CLI that can copy table schemas and items from an AWS DynamoDB source into a ScyllaDB Alternator target.
+
+1. Run `pnpm copyDynamoToScylla --dry-run` to inspect the table plan first
+2. Use `--tables futureverse-user,futureverse-oauth` if you want to scope the migration
+3. Point the target at the Gen3 server Alternator endpoint with `--target-endpoint http://<gen3-host>:8000`
+
+Example:
+
+```bash
+pnpm copyDynamoToScylla \
+    --source-region us-west-2 \
+    --target-endpoint http://127.0.0.1:8000 \
+    --target-access-key alternator \
+    --target-secret-key alternator
+```
+
+The script creates missing target tables with the source key schema and indexes, then scans and batch-writes items into the target.
+
+## DynamoDB Dump And Restore
+
+For server-to-server AWS access constraints, the repo also includes a dump-and-restore flow.
+
+1. Run `pnpm dumpDynamoTables --output-dir ./tmp/prod-dump` to export raw DynamoDB table schemas and items into files
+2. Transfer that dump directory to the Gen3 server
+3. Run `pnpm restoreDynamoDump --input-dir ./tmp/prod-dump --reset-target` on the Gen3 server to recreate the Alternator tables and load the dumped items
+
+The default dump command now uses the parallel dumper. It writes a durable `dump.log` file at the output root, stores chunk files under per-segment directories for large tables, and keeps resumable checkpoints for interrupted runs.
+
+If a table dump is known to be bad and you want to rebuild just that table from page 1, use `--restart-tables table-a,table-b` together with `--append`.
+
+If you need the old single-cursor behavior for debugging, use `pnpm dumpDynamoTablesSequential`.
+
+`pnpm dumpDynamoTables` and `pnpm dumpDynamoTablesParallel` now point at the same parallel-scan dumper. It writes the same top-level dump structure, but stores chunk files under per-segment subdirectories and keeps per-segment checkpoints so interrupted parallel runs can resume. Use a separate output directory if you want to run it alongside any sequential dumper run.
+
+Example dump:
+
+```bash
+aws configure export-credentials --profile fv-identity-production --format env > /tmp/fv-prod.env
+source /tmp/fv-prod.env
+
+pnpm dumpDynamoTables \
+    --append \
+    --source-region us-west-2 \
+    --segments 64 \
+    --segment-concurrency 64 \
+    --scan-limit 100 \
+    --page-delay-ms 100 \
+    --output-dir ./tmp/prod-dump
+```
+
+Example restore:
+
+```bash
+pnpm restoreDynamoDump \
+    --input-dir ./tmp/prod-dump \
+    --chunk-concurrency 16 \
+    --target-endpoint http://127.0.0.1:8000 \
+    --target-access-key alternator \
+    --target-secret-key alternator \
+    --reset-target
+```
+
+The dump format stores raw DynamoDB attribute maps as newline-delimited JSON, which preserves the source values exactly and avoids JavaScript type coercion during export/import.
+
 ## Dependencies
 
 The applications within the project rely on the functionalities and resources provided by the libraries section.

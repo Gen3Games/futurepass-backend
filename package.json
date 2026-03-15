@@ -24,6 +24,11 @@
     "createLDFlag": "pnpm exec node ./apps/identity-provider-backend/src/scripts/createLaunchdarklyFlag.mjs",
     "deleteLDFlag": "pnpm exec node ./apps/identity-provider-backend/src/scripts/deleteLaunchdarklyFlag.mjs",
     "deleteUserDbRecords": "pnpm exec node ./apps/identity-provider-backend/src/scripts/deleteUserDbRecords.mjs",
+    "copyDynamoToScylla": "pnpm exec node ./scripts/migration/copyDynamoToScylla.mjs",
+    "dumpDynamoTables": "pnpm exec node ./scripts/migration/dumpDynamoTablesParallel.mjs",
+    "dumpDynamoTablesSequential": "pnpm exec node ./scripts/migration/dumpDynamoTables.mjs",
+    "dumpDynamoTablesParallel": "pnpm exec node ./scripts/migration/dumpDynamoTablesParallel.mjs",
+    "restoreDynamoDump": "pnpm exec node ./scripts/migration/restoreDynamoDump.mjs",
     "publish-lib": "node ./scripts/packagePublishing/prepublish.js"
   },
   "private": true,

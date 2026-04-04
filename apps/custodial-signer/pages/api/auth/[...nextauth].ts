@@ -14,7 +14,11 @@ import { config } from '../../../config'
 import { getProviderIdForIdpDomain } from '../../../src/utils'
 
 type FVUser = User & { id: string }
-type FVSession = Session & { user?: Session['user'] & FVUser }
+type FVSession = Session & {
+  user?: Session['user'] & FVUser
+  subject?: string
+  issuer?: string
+}
 
 // MUST be strict to cull any other fields
 const FVParams = t.strict(
@@ -58,6 +62,8 @@ const FVJwtFields = t.strict(
     custodian: Custodian,
     chainId: t.number,
     futurepass: Address,
+    subject: t.string,
+    issuer: t.string,
   },
   'FVJwtFields'
 )
@@ -115,6 +121,21 @@ function FVProvider(config: {
       return config.clientSecret()
     },
   }
+}
+
+function resolveIssuerForProviderId(
+  providerId: string,
+  idpURLs: string[]
+): string {
+  const issuer = idpURLs.find(
+    (idpURL) => getProviderIdForIdpDomain(idpURL) === providerId
+  )
+
+  if (issuer == null) {
+    throw new Error(`unable to resolve issuer for provider=${providerId}`)
+  }
+
+  return new URL(issuer).origin
 }
 
 export function createAuthOptions(config: {
@@ -175,6 +196,10 @@ export function createAuthOptions(config: {
             )
           }
           const { user, account, profile } = paramsR.right
+          const issuer = resolveIssuerForProviderId(
+            account.provider,
+            config.idpURLs()
+          )
 
           return {
             ...params.token,
@@ -183,6 +208,8 @@ export function createAuthOptions(config: {
               access_token: account.access_token,
               refresh_token: account.refresh_token,
               futurepass: profile.futurepass,
+              subject: user.id,
+              issuer,
             }),
           }
         }
@@ -262,8 +289,11 @@ export function createAuthOptions(config: {
           ...session,
           user: {
             ...session.user,
+            id: fields.subject,
             ...user,
           } as FVUser | undefined,
+          subject: fields.subject,
+          issuer: fields.issuer,
         }
       },
     },

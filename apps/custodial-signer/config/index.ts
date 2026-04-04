@@ -3,6 +3,12 @@ import * as t from 'io-ts'
 
 export const config = {
   server: {
+    get signerAPIHost() {
+      return sdk.io.fromEnv(
+        'GEN3_SIGNER_BASE_URL',
+        sdk.io.fromEnv('FOUNDATION_API_BASE_URL')
+      )
+    },
     get foundationAPIHost() {
       return sdk.io.fromEnv('FOUNDATION_API_BASE_URL')
     },

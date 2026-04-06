@@ -21,18 +21,19 @@ export const deriveRAddress = (publicKey: string): string => {
 
 export const nullAddress = '0x0000000000000000000000000000000000000000'
 
-export const identityRegistry =
-  NativeFuturePassIdentityRegistry__factory.connect(
+function getIdentityRegistry() {
+  return NativeFuturePassIdentityRegistry__factory.connect(
     sdk.FUTUREPASS_REGISTRAR,
     C.wallet
   )
+}
 
 export async function safeIdentityOf(eoa: string): Promise<string | null> {
   if (C.disableExternalDependencies) {
     return null
   }
 
-  const x = await identityRegistry.futurepassOf(eoa)
+  const x = await getIdentityRegistry().futurepassOf(eoa)
   if (x === nullAddress) {
     return null
   }

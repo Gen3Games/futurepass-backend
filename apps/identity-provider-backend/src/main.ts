@@ -3,6 +3,7 @@ import fs from 'fs'
 import http from 'http'
 import https from 'https'
 import * as path from 'path'
+import crypto from 'crypto'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 
@@ -20,7 +21,6 @@ import useragent from 'express-useragent'
 import { either as E } from 'fp-ts'
 import helmet from 'helmet'
 
-import * as jose from 'jose'
 import * as njose from 'node-jose'
 import { JWKS } from 'oidc-provider'
 
@@ -31,7 +31,6 @@ import {
   RedisOtpStorage,
 } from '../src/services/otp/IOtpStorage'
 import * as CO from './common'
-import * as FoundationAPI from './foundation-api'
 import {
   formActionDirectiveDefaultSrcList,
   FRONTEND_CSP_DIRECTIVES,
@@ -121,18 +120,6 @@ async function main() {
   server.use(MDW.instagramBrowserRedirect)
   server.use(MDW.custodialAuthBlocker)
 
-  // select first key from JWKS for signing foundation api tokens
-  const foundationAPISigningKey = (() => {
-    const k = keystore.all()[0]
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- keystore.all() could be undefined at runtime
-    if (k == null) {
-      throw new Error('no signing key found for use with foundation api')
-    }
-
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the output is untyped, however, it fits the jose.JWK interface (standard)
-    return k.toJSON(true) as jose.JWK
-  })()
-
   const wallet = C.wallet
   AWS.config.update({
     cloudwatch: {},
@@ -214,6 +201,68 @@ async function main() {
     }
 
     return null
+  }
+
+  const createGen3CustodyRecord = async (
+    sub: FVSub
+  ): Promise<{
+    iss: string
+    userId: string
+    address: string
+    keyId: string
+  }> => {
+    if (sub.type !== 'email' && sub.type !== 'idp') {
+      throw new Error(
+        `Gen3 custody creation is only supported for custodial subjects: ${FVSub.encode(
+          sub
+        )}`
+      )
+    }
+
+    const iss = ISSUER_ALT.trim().toLowerCase()
+    const userId = FVSub.encode(sub).toLowerCase()
+    const signingKey = ethers.Wallet.createRandom()
+    const privateKey = signingKey.privateKey.replace(/^0x/, '')
+    const publicKey = ethers.utils.computePublicKey(signingKey.privateKey, true)
+    const address = ethers.utils.computeAddress(publicKey)
+    const keyId = `gen3:${iss}:${userId}`
+    const now = new Date().toISOString()
+
+    try {
+      await documentClient.put({
+        TableName: custodyTableName,
+        Item: {
+          iss,
+          userId,
+          keyId,
+          originalKeyId: crypto.randomUUID(),
+          address,
+          publicKey,
+          privateKey,
+          status: 'active',
+          origin: 'native',
+          createdAt: now,
+          updatedAt: now,
+          timestamp: Math.floor(Date.now() / 1000),
+        },
+        ConditionExpression:
+          'attribute_not_exists(iss) AND attribute_not_exists(userId)',
+      })
+    } catch (error) {
+      const existingRecord = await findGen3CustodyRecord(sub)
+      if (existingRecord != null) {
+        return existingRecord
+      }
+
+      throw error
+    }
+
+    return {
+      iss,
+      userId,
+      address,
+      keyId,
+    }
   }
 
   const eventEmitter = new EventEmitter()
@@ -406,10 +455,6 @@ async function main() {
           }
         }
 
-        if (C.disableExternalDependencies) {
-          return null
-        }
-
         const gen3CustodyRecord = await findGen3CustodyRecord(sub)
         if (gen3CustodyRecord != null) {
           return {
@@ -420,25 +465,11 @@ async function main() {
           }
         }
 
-        // TODO we could cache this look up
-        const info = await FoundationAPI.keyInfo(
-          C.FOUNDATION_API_BASE_URL,
-          await FoundationAPI.createAuthToken({
-            issuer: ISSUER_ALT,
-            subject: FVSub.encode(sub).toLowerCase(),
-            secretKey: foundationAPISigningKey, // TODO fix type (see node-jose docs),
-          })
-        )
-
-        if (info == null) return null // not found
-
-        const eoa = ethers.utils.computeAddress(info.publicKey)
-        return {
-          sub,
-          eoa,
-          hasAcceptedTerms:
-            userData == null ? false : userData.hasAcceptedTerms,
+        if (C.disableExternalDependencies) {
+          return null
         }
+
+        return null
       }
 
       identityProviderBackendLogger.warn(
@@ -526,15 +557,8 @@ async function main() {
         return gen3CustodyRecord.address
       }
 
-      const { publicKey } = await FoundationAPI.getOrCreateKey(
-        C.FOUNDATION_API_BASE_URL,
-        await FoundationAPI.createAuthToken({
-          issuer: ISSUER_ALT,
-          subject: FVSub.encode(sub).toLowerCase(),
-          secretKey: foundationAPISigningKey, // TODO fix type (see node-jose docs),
-        })
-      )
-      return ethers.utils.computeAddress(publicKey)
+      const createdGen3CustodyRecord = await createGen3CustodyRecord(sub)
+      return createdGen3CustodyRecord.address
     },
   }
   const config = {

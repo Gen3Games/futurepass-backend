@@ -3,8 +3,15 @@ import pino from 'pino'
 import 'pino-pretty'
 import * as CO from './common'
 import { ExperienceManager } from './experienceManager'
-import * as C from './serverConfig'
-import { getTraceData } from './utils'
+
+const getTraceData = () => {
+  return {
+    xray_trace_id: 'N/A',
+  }
+}
+
+const isDevelopment = process.env['NODE_ENV'] !== 'production'
+const loggerLevel = process.env['LOGGER_LEVEL'] ?? 'debug'
 /**
  *
  * Identity provider loggin code system
@@ -275,7 +282,6 @@ const LogDataInputOptions = t.type({
 
 type LogDataInputOptions = t.TypeOf<typeof LogDataInputOptions>
 
-const loggerLevel = C.config.loggerLevel
 class IdentityProviderBackendLogger {
   private static instance: IdentityProviderBackendLogger | null = null
 
@@ -297,7 +303,7 @@ class IdentityProviderBackendLogger {
     transport: {
       target: 'pino-pretty',
       options: {
-        colorize: C.config.isDevelopment ? true : false,
+        colorize: isDevelopment,
         translateTime: true,
         singleLine: true,
         ignore:
@@ -306,7 +312,7 @@ class IdentityProviderBackendLogger {
           switch (loggerLevel) {
             case 'debug':
               return (() => {
-                if (C.config.isDevelopment) {
+                if (isDevelopment) {
                   return `{color}[srv={serviceName}][experience={experience}][experienceHost={experienceHost}][method={methodName}][code={code}]:{msg}:[params={params}]${CUSTOM_COLORS.trace}`
                 }
                 return '[srv={serviceName}][experience={experience}][experienceHost={experienceHost}][method={methodName}][code={code}]:{msg}:[params={params}]'
@@ -352,7 +358,7 @@ class IdentityProviderBackendLogger {
 
   public stream(message: string, code: number) {
     // use this when you want to metering something
-    if (!C.config.isDevelopment && this.isStreaming(code)) {
+    if (!isDevelopment && this.isStreaming(code)) {
       this.logger.info(this.createStreamData(message, code))
     }
   }
@@ -387,7 +393,7 @@ class IdentityProviderBackendLogger {
       ? `[${method}][${type}][responseCode:${responseCode}][duration:${duration}]${message}`
       : `[${method}][${type}]${message}`
 
-    if (!C.config.isDevelopment && this.isStreaming(code)) {
+    if (!isDevelopment && this.isStreaming(code)) {
       this.logger.info(this.createStreamData(apiMessage, code))
     }
     return currentTime

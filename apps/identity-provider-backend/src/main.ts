@@ -154,6 +154,68 @@ async function main() {
 
   const userDB = new DynamodbFVUserStorage(documentClient)
 
+  const custodyTableName = 'foundation-key-ownership'
+  const legacyCustodyIssuerFallbacks = [
+    'https://login.futureverse.app',
+    'https://login.pass.online',
+  ]
+
+  const findGen3CustodyRecord = async (
+    sub: FVSub
+  ): Promise<
+    | {
+        iss: string
+        userId: string
+        address: string
+        keyId: string
+      }
+    | null
+  > => {
+    if (sub.type !== 'email' && sub.type !== 'idp') {
+      return null
+    }
+
+    const userId = FVSub.encode(sub).toLowerCase()
+    const issuerCandidates = [ISSUER_ALT, ...legacyCustodyIssuerFallbacks]
+      .map((issuer) => issuer.trim().toLowerCase())
+      .filter((issuer, index, all) => issuer !== '' && all.indexOf(issuer) === index)
+
+    for (const iss of issuerCandidates) {
+      const response = await documentClient.get({
+        TableName: custodyTableName,
+        Key: {
+          iss,
+          userId,
+        },
+      })
+
+      const item = response.Item as
+        | {
+            iss?: string
+            userId?: string
+            address?: string
+            keyId?: string
+          }
+        | undefined
+
+      if (
+        item?.iss != null &&
+        item.userId != null &&
+        item.address != null &&
+        item.keyId != null
+      ) {
+        return {
+          iss: item.iss,
+          userId: item.userId,
+          address: item.address,
+          keyId: item.keyId,
+        }
+      }
+    }
+
+    return null
+  }
+
   const eventEmitter = new EventEmitter()
 
   const futurepassCreationQueue = new FuturepassCreationQueue(
@@ -348,6 +410,16 @@ async function main() {
           return null
         }
 
+        const gen3CustodyRecord = await findGen3CustodyRecord(sub)
+        if (gen3CustodyRecord != null) {
+          return {
+            sub,
+            eoa: gen3CustodyRecord.address,
+            hasAcceptedTerms:
+              userData == null ? false : userData.hasAcceptedTerms,
+          }
+        }
+
         // TODO we could cache this look up
         const info = await FoundationAPI.keyInfo(
           C.FOUNDATION_API_BASE_URL,
@@ -447,6 +519,11 @@ async function main() {
             sub
           )}`
         )
+      }
+
+      const gen3CustodyRecord = await findGen3CustodyRecord(sub)
+      if (gen3CustodyRecord != null) {
+        return gen3CustodyRecord.address
       }
 
       const { publicKey } = await FoundationAPI.getOrCreateKey(

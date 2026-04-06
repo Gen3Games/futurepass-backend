@@ -78,13 +78,14 @@ export const GoogleLogin: SocialLogin = {
         cb: (e: Error | null, user: FVSub, info: FVUserProfile) => void
       ) => {
         const data = CO.hush(GoogleOauthUserRawProfile.decode(profile._json))
+        const googleSub = data?.sub || profile.id || ''
 
         cb(
           null,
           {
             type: 'idp',
             idp: 'google',
-            sub: profile.id,
+            sub: googleSub,
           },
           {
             email: data?.email,

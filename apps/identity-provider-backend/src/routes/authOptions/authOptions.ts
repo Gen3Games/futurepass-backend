@@ -30,66 +30,6 @@ const AUTH_OPTION_CDN_URL = `${C.CDN_HOSTNAME}/custodial-auth-option-icons`
 
 export const ALL_AUTH_OPTIONS: CUSTODIAL_AUTH_OPTIONS = [
   {
-    configId: 'google',
-    apiResponse: {
-      id: 'futureverseCustodialGoogle',
-      name: 'Google',
-      loginHint: 'social:google',
-      iconUrls: {
-        white: `${AUTH_OPTION_CDN_URL}/google-white.svg`,
-        fullcolor: `${AUTH_OPTION_CDN_URL}/google-full-color.svg`,
-      },
-    },
-  },
-  {
-    configId: 'facebook',
-    apiResponse: {
-      id: 'futureverseCustodialFacebook',
-      name: 'Facebook',
-      loginHint: 'social:facebook',
-      iconUrls: {
-        white: `${AUTH_OPTION_CDN_URL}/facebook-white.svg`,
-        fullcolor: `${AUTH_OPTION_CDN_URL}/facebook-full-color.svg`,
-      },
-    },
-  },
-  {
-    configId: 'tiktok',
-    apiResponse: {
-      id: 'futureverseCustodialTikTok',
-      name: 'TikTok',
-      loginHint: 'social:tiktok',
-      iconUrls: {
-        white: `${AUTH_OPTION_CDN_URL}/tiktok-white.svg`,
-        fullcolor: `${AUTH_OPTION_CDN_URL}/tiktok-full-color.svg`,
-      },
-    },
-  },
-  {
-    configId: 'twitter',
-    apiResponse: {
-      id: 'futureverseCustodialX',
-      name: 'X',
-      loginHint: 'social:twitter',
-      iconUrls: {
-        white: `${AUTH_OPTION_CDN_URL}/x-white.svg`,
-        fullcolor: `${AUTH_OPTION_CDN_URL}/x-full-color.svg`,
-      },
-    },
-  },
-  {
-    configId: 'apple',
-    apiResponse: {
-      id: 'futureverseCustodialApple',
-      name: 'Apple',
-      loginHint: 'social:apple',
-      iconUrls: {
-        white: `${AUTH_OPTION_CDN_URL}/apple-white.svg`,
-        fullcolor: `${AUTH_OPTION_CDN_URL}/apple-full-color.svg`,
-      },
-    },
-  },
-  {
     configId: 'email',
     apiResponse: {
       id: 'futureverseCustodialEmail',
@@ -98,6 +38,18 @@ export const ALL_AUTH_OPTIONS: CUSTODIAL_AUTH_OPTIONS = [
       iconUrls: {
         white: `${AUTH_OPTION_CDN_URL}/email-white.svg`,
         fullcolor: undefined,
+      },
+    },
+  },
+  {
+    configId: 'google',
+    apiResponse: {
+      id: 'futureverseCustodialGoogle',
+      name: 'Google',
+      loginHint: 'social:google',
+      iconUrls: {
+        white: `${AUTH_OPTION_CDN_URL}/google-white.svg`,
+        fullcolor: `${AUTH_OPTION_CDN_URL}/google-full-color.svg`,
       },
     },
   },

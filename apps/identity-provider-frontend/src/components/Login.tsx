@@ -40,6 +40,35 @@ function getConnectorName(connectorType: ConnectorType): string {
   }
 }
 
+type DisabledCustodialProvider = {
+  id: string
+  icon: React.ComponentProps<typeof Icon>['icon']
+  label: string
+}
+
+const DISABLED_CUSTODIAL_PROVIDERS: DisabledCustodialProvider[] = [
+  {
+    id: 'facebook',
+    icon: 'Facebook',
+    label: 'Facebook',
+  },
+  {
+    id: 'twitter',
+    icon: 'TwitterLogo',
+    label: 'X',
+  },
+  {
+    id: 'tiktok',
+    icon: 'TiktokLogo',
+    label: 'TikTok',
+  },
+  {
+    id: 'apple',
+    icon: 'AppleLogo',
+    label: 'Apple',
+  },
+]
+
 const detectInstalledWeb3Wallets = () => {
   return {
     isMetamaskDetected: !!window.ethereum?.isMetaMask,
@@ -396,92 +425,6 @@ const Login = ({
           id="login-custodial__content"
           className="login-custodial__content flex flex-col w-full gap-medium items-center my-[10px]"
         >
-          <div
-            id="login-custodial__content_block-1"
-            className="login-custodial__content_block-1 flex flex-row w-full gap-normal"
-          >
-            <RoundedButton
-              variant="contained"
-              onClick={() => {
-                window.location.href = `/login/social/google`
-              }}
-              id="login-custodial__content_google-button"
-              className="login-custodial__content_google-button w-full"
-            >
-              <div className="flex flex-row items-center justify-center align-middle">
-                <Icon icon="Google" size={30} className="mr-2" />
-                {translate(
-                  'login-custodial.login-custodial__content_google-button'
-                )}
-              </div>
-            </RoundedButton>
-            <RoundedButton
-              variant="contained"
-              onClick={() => {
-                window.location.href = `/login/social/facebook`
-              }}
-              id="login-custodial__content_facebook-button"
-              className="login-custodial__content_facebook-button w-full"
-            >
-              <div className="flex flex-row items-center justify-center align-middle">
-                <Icon icon="Facebook" size={30} className="mr-2" />
-                {translate(
-                  'login-custodial.login-custodial__content_facebook-button'
-                )}
-              </div>
-            </RoundedButton>
-          </div>
-          <div className="login-custodial__content_block-2 flex flex-row w-full gap-normal">
-            <RoundedButton
-              variant="contained"
-              onClick={() => {
-                window.location.href = `/login/social/twitter`
-              }}
-              id="login-custodial__content_twitter-button"
-              className="login-custodial__content_twitter-button w-full"
-            >
-              <div className="flex flex-row items-center justify-center align-middle">
-                <Icon icon="TwitterLogo" size={30} className="mr-2" />
-                {translate(
-                  'login-custodial.login-custodial__content_twitter-button'
-                )}
-              </div>
-            </RoundedButton>
-            <RoundedButton
-              variant="contained"
-              onClick={() => {
-                window.location.href = `/login/social/tiktok`
-              }}
-              id="login-custodial__content_tiktok-button"
-              className="login-custodial__content_tiktok-button w-full"
-            >
-              <div className="flex flex-row items-center justify-center align-middle">
-                <Icon icon="TiktokLogo" size={30} className="mr-2" />
-                {translate(
-                  'login-custodial.login-custodial__content_tiktok-button'
-                )}
-              </div>
-            </RoundedButton>
-          </div>
-
-          <div className="login-custodial__content_block-3 flex flex-row w-full gap-normal">
-            <RoundedButton
-              variant="contained"
-              onClick={() => {
-                window.location.href = `/login/social/apple`
-              }}
-              id="login-custodial__content_apple-button"
-              className="login-custodial__content_apple-button w-full"
-            >
-              <div className="flex flex-row items-center justify-center align-middle">
-                <Icon icon="AppleLogo" size={30} className="mr-2" />
-                {translate(
-                  'login-custodial.login-custodial__content_apple-button'
-                )}
-              </div>
-            </RoundedButton>
-          </div>
-
           <RoundedButton
             variant="outlined"
             onClick={() => {
@@ -497,6 +440,45 @@ const Login = ({
               )}
             </div>
           </RoundedButton>
+
+          <RoundedButton
+            variant="contained"
+            onClick={() => {
+              window.location.href = `/login/social/google`
+            }}
+            id="login-custodial__content_google-button"
+            className="login-custodial__content_google-button w-full"
+          >
+            <div className="flex flex-row items-center justify-center align-middle">
+              <Icon icon="Google" size={30} className="mr-2" />
+              {translate(
+                'login-custodial.login-custodial__content_google-button'
+              )}
+            </div>
+          </RoundedButton>
+
+          <div className="login-custodial__content_disabled-providers grid w-full grid-cols-1 gap-normal md:grid-cols-2">
+            {DISABLED_CUSTODIAL_PROVIDERS.map((provider) => {
+              return (
+                <RoundedButton
+                  key={provider.id}
+                  variant="contained"
+                  disabled
+                  id={`login-custodial__content_${provider.id}-button`}
+                  className="w-full border-colorQuaternary bg-colorQuaternary/20 text-colorQuaternary opacity-70"
+                >
+                  <div className="flex flex-row items-center justify-center align-middle">
+                    <Icon icon={provider.icon} size={30} className="mr-2" />
+                    {provider.label}
+                  </div>
+                </RoundedButton>
+              )
+            })}
+          </div>
+
+          <p className="text-center font-ObjektivMk1Medium text-fontExtraSmall text-colorTertiary">
+            Other sign-in providers are temporarily unavailable.
+          </p>
         </div>
 
         <div className="flex flex-col items-center gap-normal">
